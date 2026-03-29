@@ -5,7 +5,7 @@
     "@semantic-release/release-notes-generator",
     "@semantic-release/changelog",
     ["@semantic-release/exec", {
-      "prepareCmd": "scripts/build.sh ${nextRelease.version}"
+      "prepareCmd": "scripts/bump-version.sh ${nextRelease.version} && scripts/build.sh ${nextRelease.version}"
     }],
     ["@semantic-release/github", {
       "assets": [
@@ -13,7 +13,7 @@
       ]
     }],
     ["@semantic-release/git", {
-      "assets": ["CHANGELOG.md"],
+      "assets": ["CHANGELOG.md", "NetworkWatcher.xcodeproj/project.pbxproj"],
       "message": "chore(release): ${nextRelease.version} [skip ci]"
     }]
   ]
