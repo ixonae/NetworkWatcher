@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/ixonae/NetworkWatcher/compare/v1.1.0...v1.1.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* only request location permission when not yet determined ([d7689fc](https://github.com/ixonae/NetworkWatcher/commit/d7689fcd756db8d1730d0d49e11a0c4f42a88779))
+
 # [1.1.0](https://github.com/ixonae/NetworkWatcher/compare/v1.0.2...v1.1.0) (2026-03-29)
 
 
