@@ -1,21 +1,27 @@
 import Foundation
 
+struct IPValidationResult {
+    var matched: Bool
+    var isVPN: Bool
+}
+
 struct IPValidator {
-    static func validate(ip: String, against ranges: [String]) -> Bool {
-        for range in ranges {
+    static func validate(ip: String, against entries: [AllowedIPEntry]) -> IPValidationResult {
+        for entry in entries {
+            let range = entry.range
             if range.trimmingCharacters(in: .whitespaces) == "*" {
-                return true
+                return IPValidationResult(matched: true, isVPN: entry.isVPN)
             } else if range.contains("/") {
                 if matchesCIDR(ip: ip, cidr: range) {
-                    return true
+                    return IPValidationResult(matched: true, isVPN: entry.isVPN)
                 }
             } else {
                 if ip == range.trimmingCharacters(in: .whitespaces) {
-                    return true
+                    return IPValidationResult(matched: true, isVPN: entry.isVPN)
                 }
             }
         }
-        return false
+        return IPValidationResult(matched: false, isVPN: false)
     }
 
     static func matchesCIDR(ip: String, cidr: String) -> Bool {

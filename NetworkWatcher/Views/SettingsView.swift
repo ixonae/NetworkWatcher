@@ -6,6 +6,7 @@ struct SettingsView: View {
     enum Tab: String, CaseIterable {
         case networks = "Networks"
         case general = "General"
+        case about = "About"
     }
 
     @State private var selectedTab: Tab = .networks
@@ -23,6 +24,12 @@ struct SettingsView: View {
                     Label("General", systemImage: "gear")
                 }
                 .tag(Tab.general)
+
+            AboutView()
+                .tabItem {
+                    Label("About", systemImage: "info.circle")
+                }
+                .tag(Tab.about)
         }
         .frame(minWidth: 550, minHeight: 400)
         .padding()

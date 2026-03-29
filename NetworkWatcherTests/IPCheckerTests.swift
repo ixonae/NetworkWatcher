@@ -196,4 +196,16 @@ final class IPCheckerTests: XCTestCase {
             XCTFail("Unexpected error: \(error)")
         }
     }
+
+    // MARK: - Error Descriptions
+
+    func testIPCheckerErrorDescriptions() {
+        XCTAssertNotNil(IPCheckerError.invalidURL.errorDescription)
+        XCTAssertNotNil(IPCheckerError.badResponse.errorDescription)
+        XCTAssertNotNil(IPCheckerError.invalidData.errorDescription)
+
+        XCTAssertEqual(IPCheckerError.invalidURL.errorDescription, "Invalid IP lookup URL")
+        XCTAssertEqual(IPCheckerError.badResponse.errorDescription, "Bad response from IP lookup service")
+        XCTAssertEqual(IPCheckerError.invalidData.errorDescription, "Could not parse IP address from response")
+    }
 }

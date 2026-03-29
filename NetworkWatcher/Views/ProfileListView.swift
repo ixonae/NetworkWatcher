@@ -65,7 +65,7 @@ struct NetworkListView: View {
     }
 
     private func iconName(for network: NetworkEntry) -> String {
-        if network.isVPN {
+        if network.allowedIPRanges.contains(where: { $0.isVPN }) {
             return "lock.shield"
         } else if network.networkIdentifier == "*" {
             return "globe"
@@ -88,6 +88,14 @@ struct AddNetworkSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var selectedType = "custom"
+
+    private var isDuplicate: Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return false }
+        return networkManager.networks.contains {
+            $0.networkIdentifier.lowercased() == trimmed.lowercased()
+        }
+    }
 
     private let connectionTypes = [
         ("custom", "WiFi SSID (custom)"),
@@ -121,6 +129,12 @@ struct AddNetworkSheet: View {
                 }
             }
 
+            if isDuplicate {
+                Text("A network with this name already exists.")
+                    .foregroundColor(.red)
+                    .font(.caption)
+            }
+
             HStack {
                 Button("Cancel") { dismiss() }
                     .keyboardShortcut(.cancelAction)
@@ -132,7 +146,7 @@ struct AddNetworkSheet: View {
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isDuplicate)
             }
         }
         .padding()
