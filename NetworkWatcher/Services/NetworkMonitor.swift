@@ -13,7 +13,10 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate {
     }
 
     func requestLocationPermission() {
-        locationManager.requestWhenInUseAuthorization()
+        let status = locationManager.authorizationStatus
+        if status == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+        }
     }
 
     func currentSSID() -> String? {
