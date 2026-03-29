@@ -38,7 +38,7 @@ struct GeneralSettingsView: View {
 
                     if selectedURLOption == "custom" {
                         LabeledContent("URL") {
-                            TextField("https://example.com/ip", text: $customURL)
+                            TextField("", text: $customURL)
                                 .onChange(of: customURL) { _, newValue in
                                     settings.ipLookupURL = newValue
                                 }
@@ -95,6 +95,7 @@ struct GeneralSettingsView: View {
         }
         .onAppear {
             settings = networkManager.settings
+            settings.launchAtLogin = SMAppService.mainApp.status == .enabled
             initURLSelection()
             authToken = KeychainService.load(key: "ipLookupAuthToken") ?? ""
         }
@@ -118,6 +119,7 @@ struct GeneralSettingsView: View {
             }
         } catch {
             print("Failed to update launch at login: \(error)")
+            settings.launchAtLogin = !enabled
         }
     }
 }
