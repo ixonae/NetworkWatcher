@@ -16,6 +16,8 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
@@ -26,15 +28,20 @@ jobs:
             -scheme NetworkWatcher \
             -destination 'platform=macOS,arch=arm64' \
             -resultBundlePath TestResults \
+            -enableCodeCoverage YES \
             -test-timeouts-enabled YES \
             -maximum-test-execution-time-allowance 60 \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_ALLOWED=NO | xcpretty --color && exit ${PIPESTATUS[0]}
         timeout-minutes: 10
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v7
-        if: failure()
-        with:
-          name: TestResults
-          path: TestResults
+      - name: Convert coverage to Sonar format
+        run: |
+          brew install a7ex/homebrew-formulae/xcresultparser
+          xcresultparser --output-format sonarqube-generic-coverage TestResults.xcresult > sonar-coverage.xml
+
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -10,6 +10,7 @@ jobs:
   release:
     name: Build & Release
     runs-on: macos-26
+    environment: production
     steps:
       - uses: actions/checkout@v6
         with:
@@ -43,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install semantic-release
         run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/exec
