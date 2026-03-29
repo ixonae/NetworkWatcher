@@ -34,17 +34,3 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_ALLOWED=NO | xcpretty --color && exit ${PIPESTATUS[0]}
         timeout-minutes: 10
-
-      - name: Convert coverage to Sonar format
-        run: |
-          brew install a7ex/homebrew-formulae/xcresultparser
-          xcresultparser --output-format sonarqube-generic-coverage TestResults.xcresult > sonar-coverage.xml
-
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.branch.name=${{ github.ref_name }}
