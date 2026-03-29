@@ -1,5 +1,4 @@
 import XCTest
-@testable import Network_Watcher
 
 final class KeychainServiceTests: XCTestCase {
 

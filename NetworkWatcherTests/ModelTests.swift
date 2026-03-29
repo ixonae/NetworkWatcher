@@ -1,5 +1,4 @@
 import XCTest
-@testable import Network_Watcher
 
 final class ModelTests: XCTestCase {
 
@@ -13,7 +12,7 @@ final class ModelTests: XCTestCase {
     }
 
     func testNetworkEntry_codable() throws {
-        let entry = NetworkEntry(networkIdentifier: "TestWiFi", allowedIPRanges: ["1.2.3.4", "10.0.0.0/24", "*"])
+        let entry = NetworkEntry(networkIdentifier: "TestWiFi", allowedIPRanges: [TestIP.stub, TestIP.cidr10_24, "*"])
         let data = try JSONEncoder().encode(entry)
         let decoded = try JSONDecoder().decode(NetworkEntry.self, from: data)
 
@@ -38,13 +37,13 @@ final class ModelTests: XCTestCase {
     }
 
     func testNetworkEntry_vpnCodable() throws {
-        let entry = NetworkEntry(networkIdentifier: "VPNNet", isVPN: true, allowedIPRanges: ["10.0.0.0/8"])
+        let entry = NetworkEntry(networkIdentifier: "VPNNet", isVPN: true, allowedIPRanges: [TestIP.cidr10_8])
         let data = try JSONEncoder().encode(entry)
         let decoded = try JSONDecoder().decode(NetworkEntry.self, from: data)
 
         XCTAssertEqual(decoded.isVPN, true)
         XCTAssertEqual(decoded.networkIdentifier, "VPNNet")
-        XCTAssertEqual(decoded.allowedIPRanges, ["10.0.0.0/8"])
+        XCTAssertEqual(decoded.allowedIPRanges, [TestIP.cidr10_8])
     }
 
     func testNetworkEntry_uniqueIDs() {

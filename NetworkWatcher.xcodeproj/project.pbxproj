@@ -27,6 +27,13 @@
 		B10000003 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000013 /* ModelTests.swift */; };
 		B10000004 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000014 /* KeychainServiceTests.swift */; };
 		B10000005 /* IPCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000015 /* IPCheckerTests.swift */; };
+		B10000016 /* TestConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000017 /* TestConstants.swift */; };
+		B10000006 /* IPValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000017 /* IPValidator.swift */; };
+		B10000007 /* IPChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000015 /* IPChecker.swift */; };
+		B10000008 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000021 /* KeychainService.swift */; };
+		B10000009 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000013 /* Profile.swift */; };
+		B1000000A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000014 /* AppSettings.swift */; };
+		B1000000B /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* ProfileManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +75,7 @@
 		B10000013 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
 		B10000014 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
 		B10000015 /* IPCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCheckerTests.swift; sourceTree = "<group>"; };
+		B10000017 /* TestConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestConstants.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,6 +185,7 @@
 		B10000040 /* NetworkWatcherTests */ = {
 			isa = PBXGroup;
 			children = (
+				B10000017 /* TestConstants.swift */,
 				B10000011 /* IPValidatorTests.swift */,
 				B10000012 /* NetworkManagerTests.swift */,
 				B10000013 /* ModelTests.swift */,
@@ -238,7 +247,6 @@
 					};
 					B10000050 = {
 						CreatedOnToolsVersion = 15.0;
-						TestTargetID = A10000050;
 					};
 				};
 			};
@@ -298,11 +306,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B10000006 /* IPValidator.swift in Sources */,
+				B10000007 /* IPChecker.swift in Sources */,
+				B10000008 /* KeychainService.swift in Sources */,
+				B10000009 /* Profile.swift in Sources */,
+				B1000000A /* AppSettings.swift in Sources */,
+				B1000000B /* ProfileManager.swift in Sources */,
 				B10000001 /* IPValidatorTests.swift in Sources */,
 				B10000002 /* NetworkManagerTests.swift in Sources */,
 				B10000003 /* ModelTests.swift in Sources */,
 				B10000004 /* KeychainServiceTests.swift in Sources */,
 				B10000005 /* IPCheckerTests.swift in Sources */,
+				B10000016 /* TestConstants.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -492,7 +507,6 @@
 		B10000092 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -503,14 +517,12 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Network Watcher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Network Watcher";
 			};
 			name = Debug;
 		};
 		B10000093 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
@@ -521,7 +533,6 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Network Watcher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Network Watcher";
 			};
 			name = Release;
 		};

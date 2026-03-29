@@ -1,5 +1,4 @@
 import XCTest
-@testable import Network_Watcher
 
 // MARK: - Mock URLProtocol
 
@@ -75,21 +74,21 @@ final class IPCheckerTests: XCTestCase {
     func testFetchExternalIP_success() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            return (response, "1.2.3.4".data(using: .utf8)!)
+            return (response, TestIP.stub.data(using: .utf8)!)
         }
 
         let ip = try await checker.fetchExternalIP(from: "https://example.com/ip")
-        XCTAssertEqual(ip, "1.2.3.4")
+        XCTAssertEqual(ip, TestIP.stub)
     }
 
     func testFetchExternalIP_trimsWhitespace() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            return (response, "  1.2.3.4\n".data(using: .utf8)!)
+            return (response, "  \(TestIP.stub)\n".data(using: .utf8)!)
         }
 
         let ip = try await checker.fetchExternalIP(from: "https://example.com/ip")
-        XCTAssertEqual(ip, "1.2.3.4")
+        XCTAssertEqual(ip, TestIP.stub)
     }
 
     // MARK: - Auth Token
@@ -99,7 +98,7 @@ final class IPCheckerTests: XCTestCase {
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            return (response, "1.2.3.4".data(using: .utf8)!)
+            return (response, TestIP.stub.data(using: .utf8)!)
         }
 
         _ = try await checker.fetchExternalIP(from: "https://example.com/ip", authToken: "myToken123")
@@ -111,7 +110,7 @@ final class IPCheckerTests: XCTestCase {
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            return (response, "1.2.3.4".data(using: .utf8)!)
+            return (response, TestIP.stub.data(using: .utf8)!)
         }
 
         _ = try await checker.fetchExternalIP(from: "https://example.com/ip", authToken: nil)
@@ -123,7 +122,7 @@ final class IPCheckerTests: XCTestCase {
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-            return (response, "1.2.3.4".data(using: .utf8)!)
+            return (response, TestIP.stub.data(using: .utf8)!)
         }
 
         _ = try await checker.fetchExternalIP(from: "https://example.com/ip", authToken: "")
@@ -193,17 +192,6 @@ final class IPCheckerTests: XCTestCase {
             XCTAssertEqual(error, .invalidData)
         } catch {
             XCTFail("Unexpected error: \(error)")
-        }
-    }
-}
-
-extension IPCheckerError: Equatable {
-    public static func == (lhs: IPCheckerError, rhs: IPCheckerError) -> Bool {
-        switch (lhs, rhs) {
-        case (.invalidURL, .invalidURL): return true
-        case (.badResponse, .badResponse): return true
-        case (.invalidData, .invalidData): return true
-        default: return false
         }
     }
 }

@@ -1,5 +1,4 @@
 import XCTest
-@testable import Network_Watcher
 
 final class NetworkManagerTests: XCTestCase {
 
@@ -33,10 +32,10 @@ final class NetworkManagerTests: XCTestCase {
         var network = NetworkEntry(networkIdentifier: "TestWiFi")
         manager.addNetwork(network)
 
-        network.allowedIPRanges = ["1.2.3.4"]
+        network.allowedIPRanges = [TestIP.stub]
         manager.updateNetwork(network)
 
-        XCTAssertEqual(manager.networks.first?.allowedIPRanges, ["1.2.3.4"])
+        XCTAssertEqual(manager.networks.first?.allowedIPRanges, [TestIP.stub])
     }
 
     func testDeleteNetwork() {
@@ -51,7 +50,7 @@ final class NetworkManagerTests: XCTestCase {
     // MARK: - networkForSSID
 
     func testNetworkForSSID_exactMatch() {
-        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: ["1.2.3.4"])
+        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(network)
 
         let result = manager.networkForSSID("MyWiFi")
@@ -59,7 +58,7 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSID_caseInsensitive() {
-        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: ["1.2.3.4"])
+        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(network)
 
         let result = manager.networkForSSID("mywifi")
@@ -67,7 +66,7 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSID_noMatch_noWildcard() {
-        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: ["1.2.3.4"])
+        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(network)
 
         let result = manager.networkForSSID("OtherWiFi")
@@ -75,8 +74,8 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSID_fallbackToWildcard() {
-        let specific = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: ["1.2.3.4"])
-        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: ["5.6.7.8"])
+        let specific = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
+        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.secondary])
         manager.addNetwork(specific)
         manager.addNetwork(catchAll)
 
@@ -112,13 +111,13 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkPersistence() {
-        let network = NetworkEntry(networkIdentifier: "PersistTest", allowedIPRanges: ["10.0.0.0/8"])
+        let network = NetworkEntry(networkIdentifier: "PersistTest", allowedIPRanges: [TestIP.cidr10_8])
         manager.addNetwork(network)
 
         let manager2 = NetworkManager(defaults: testDefaults)
         XCTAssertEqual(manager2.networks.count, 1)
         XCTAssertEqual(manager2.networks.first?.networkIdentifier, "PersistTest")
-        XCTAssertEqual(manager2.networks.first?.allowedIPRanges, ["10.0.0.0/8"])
+        XCTAssertEqual(manager2.networks.first?.allowedIPRanges, [TestIP.cidr10_8])
     }
 
     // MARK: - Edge Cases
@@ -148,7 +147,7 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkPersistence_withVPN() {
-        let network = NetworkEntry(networkIdentifier: "VPNWiFi", isVPN: true, allowedIPRanges: ["10.0.0.0/8"])
+        let network = NetworkEntry(networkIdentifier: "VPNWiFi", isVPN: true, allowedIPRanges: [TestIP.cidr10_8])
         manager.addNetwork(network)
 
         let manager2 = NetworkManager(defaults: testDefaults)
@@ -156,7 +155,7 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSID_wildcardOnly() {
-        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: ["1.2.3.4"])
+        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(catchAll)
 
         let result = manager.networkForSSID("AnyNetwork")
@@ -164,8 +163,8 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSID_specificPreferredOverWildcard() {
-        let specific = NetworkEntry(networkIdentifier: "HomeWiFi", allowedIPRanges: ["10.0.0.1"])
-        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: ["1.2.3.4"])
+        let specific = NetworkEntry(networkIdentifier: "HomeWiFi", allowedIPRanges: [TestIP.private10])
+        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(catchAll)
         manager.addNetwork(specific)
 
