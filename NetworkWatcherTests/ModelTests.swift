@@ -4,14 +4,14 @@ final class ModelTests: XCTestCase {
 
     // MARK: - NetworkEntry
 
-    func testNetworkEntry_defaults() {
+    func testNetworkEntryDefaults() {
         let entry = NetworkEntry(networkIdentifier: "Test")
         XCTAssertFalse(entry.id.uuidString.isEmpty)
         XCTAssertEqual(entry.networkIdentifier, "Test")
         XCTAssertTrue(entry.allowedIPRanges.isEmpty)
     }
 
-    func testNetworkEntry_codable() throws {
+    func testNetworkEntryCodable() throws {
         let entry = NetworkEntry(networkIdentifier: "TestWiFi", allowedIPRanges: [TestIP.stub, TestIP.cidr10_24, "*"])
         let data = try JSONEncoder().encode(entry)
         let decoded = try JSONDecoder().decode(NetworkEntry.self, from: data)
@@ -21,7 +21,7 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(decoded.allowedIPRanges, entry.allowedIPRanges)
     }
 
-    func testNetworkEntry_hashable() {
+    func testNetworkEntryHashable() {
         let entry1 = NetworkEntry(networkIdentifier: "WiFi1")
         let entry2 = NetworkEntry(networkIdentifier: "WiFi2")
         var set = Set<NetworkEntry>()
@@ -31,12 +31,12 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(set.count, 2)
     }
 
-    func testNetworkEntry_defaultIsVPN() {
+    func testNetworkEntryDefaultIsVPN() {
         let entry = NetworkEntry(networkIdentifier: "Test")
         XCTAssertFalse(entry.isVPN)
     }
 
-    func testNetworkEntry_vpnCodable() throws {
+    func testNetworkEntryVpnCodable() throws {
         let entry = NetworkEntry(networkIdentifier: "VPNNet", isVPN: true, allowedIPRanges: [TestIP.cidr10_8])
         let data = try JSONEncoder().encode(entry)
         let decoded = try JSONDecoder().decode(NetworkEntry.self, from: data)
@@ -46,7 +46,7 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(decoded.allowedIPRanges, [TestIP.cidr10_8])
     }
 
-    func testNetworkEntry_uniqueIDs() {
+    func testNetworkEntryUniqueIDs() {
         let entry1 = NetworkEntry(networkIdentifier: "Same")
         let entry2 = NetworkEntry(networkIdentifier: "Same")
         XCTAssertNotEqual(entry1.id, entry2.id)
@@ -54,7 +54,7 @@ final class ModelTests: XCTestCase {
 
     // MARK: - AppSettings
 
-    func testAppSettings_codable() throws {
+    func testAppSettingsCodable() throws {
         var settings = AppSettings()
         settings.checkIntervalSeconds = 30
         settings.showIPInMenuBar = true
@@ -72,7 +72,7 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(decoded.ipLookupURL, "https://custom.example.com/ip")
     }
 
-    func testAppSettings_predefinedURLs() {
+    func testAppSettingsPredefinedURLs() {
         XCTAssertFalse(AppSettings.predefinedURLs.isEmpty)
         for preset in AppSettings.predefinedURLs {
             XCTAssertFalse(preset.name.isEmpty)

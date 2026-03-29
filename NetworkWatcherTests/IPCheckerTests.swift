@@ -5,7 +5,7 @@ import XCTest
 private class MockURLProtocol: URLProtocol {
     static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canInit(with _: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
@@ -23,7 +23,9 @@ private class MockURLProtocol: URLProtocol {
         }
     }
 
-    override func stopLoading() {}
+    override func stopLoading() {
+        // No cleanup needed for mock protocol
+    }
 }
 
 // MARK: - Tests
@@ -47,7 +49,7 @@ final class IPCheckerTests: XCTestCase {
 
     // MARK: - Invalid URL
 
-    func testFetchExternalIP_emptyURL() async {
+    func testFetchExternalIPEmptyURL() async {
         do {
             _ = try await checker.fetchExternalIP(from: "")
             XCTFail("Should have thrown")
@@ -58,7 +60,7 @@ final class IPCheckerTests: XCTestCase {
         }
     }
 
-    func testFetchExternalIP_urlWithSpaces() async {
+    func testFetchExternalIPUrlWithSpaces() async {
         do {
             _ = try await checker.fetchExternalIP(from: "ht tp://bad url")
             XCTFail("Should have thrown")
@@ -71,7 +73,7 @@ final class IPCheckerTests: XCTestCase {
 
     // MARK: - Success
 
-    func testFetchExternalIP_success() async throws {
+    func testFetchExternalIPSuccess() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, TestIP.stub.data(using: .utf8)!)
@@ -81,7 +83,7 @@ final class IPCheckerTests: XCTestCase {
         XCTAssertEqual(ip, TestIP.stub)
     }
 
-    func testFetchExternalIP_trimsWhitespace() async throws {
+    func testFetchExternalIPTrimsWhitespace() async throws {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, "  \(TestIP.stub)\n".data(using: .utf8)!)
@@ -93,7 +95,7 @@ final class IPCheckerTests: XCTestCase {
 
     // MARK: - Auth Token
 
-    func testFetchExternalIP_setsAuthorizationHeader() async throws {
+    func testFetchExternalIPSetsAuthorizationHeader() async throws {
         var capturedRequest: URLRequest?
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
@@ -105,7 +107,7 @@ final class IPCheckerTests: XCTestCase {
         XCTAssertEqual(capturedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer myToken123")
     }
 
-    func testFetchExternalIP_noAuthHeaderWhenTokenNil() async throws {
+    func testFetchExternalIPNoAuthHeaderWhenTokenNil() async throws {
         var capturedRequest: URLRequest?
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
@@ -117,7 +119,7 @@ final class IPCheckerTests: XCTestCase {
         XCTAssertNil(capturedRequest?.value(forHTTPHeaderField: "Authorization"))
     }
 
-    func testFetchExternalIP_noAuthHeaderWhenTokenEmpty() async throws {
+    func testFetchExternalIPNoAuthHeaderWhenTokenEmpty() async throws {
         var capturedRequest: URLRequest?
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
@@ -131,7 +133,7 @@ final class IPCheckerTests: XCTestCase {
 
     // MARK: - Error Responses
 
-    func testFetchExternalIP_badResponse_404() async {
+    func testFetchExternalIPBadResponse404() async {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
             return (response, Data())
@@ -147,7 +149,7 @@ final class IPCheckerTests: XCTestCase {
         }
     }
 
-    func testFetchExternalIP_badResponse_500() async {
+    func testFetchExternalIPBadResponse500() async {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!
             return (response, Data())
@@ -163,7 +165,7 @@ final class IPCheckerTests: XCTestCase {
         }
     }
 
-    func testFetchExternalIP_emptyBody() async {
+    func testFetchExternalIPEmptyBody() async {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, Data())
@@ -179,7 +181,7 @@ final class IPCheckerTests: XCTestCase {
         }
     }
 
-    func testFetchExternalIP_whitespaceOnlyBody() async {
+    func testFetchExternalIPWhitespaceOnlyBody() async {
         MockURLProtocol.requestHandler = { request in
             let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
             return (response, "  \n  ".data(using: .utf8)!)

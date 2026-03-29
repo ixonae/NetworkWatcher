@@ -49,7 +49,7 @@ final class NetworkManagerTests: XCTestCase {
 
     // MARK: - networkForSSID
 
-    func testNetworkForSSID_exactMatch() {
+    func testNetworkForSSIDExactMatch() {
         let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(network)
 
@@ -57,7 +57,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(result?.networkIdentifier, "MyWiFi")
     }
 
-    func testNetworkForSSID_caseInsensitive() {
+    func testNetworkForSSIDCaseInsensitive() {
         let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(network)
 
@@ -65,7 +65,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(result?.networkIdentifier, "MyWiFi")
     }
 
-    func testNetworkForSSID_noMatch_noWildcard() {
+    func testNetworkForSSIDNoMatchNoWildcard() {
         let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(network)
 
@@ -73,7 +73,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    func testNetworkForSSID_fallbackToWildcard() {
+    func testNetworkForSSIDFallbackToWildcard() {
         let specific = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
         let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.secondary])
         manager.addNetwork(specific)
@@ -122,13 +122,13 @@ final class NetworkManagerTests: XCTestCase {
 
     // MARK: - Edge Cases
 
-    func testUpdateNetwork_nonExistentID() {
+    func testUpdateNetworkNonExistentID() {
         let network = NetworkEntry(networkIdentifier: "Ghost")
         manager.updateNetwork(network)
         XCTAssertEqual(manager.networks.count, 0)
     }
 
-    func testDeleteNetwork_nonExistentID() {
+    func testDeleteNetworkNonExistentID() {
         let network = NetworkEntry(networkIdentifier: "Original")
         manager.addNetwork(network)
 
@@ -138,7 +138,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(manager.networks.first?.networkIdentifier, "Original")
     }
 
-    func testAddMultipleNetworks_orderPreserved() {
+    func testAddMultipleNetworksOrderPreserved() {
         manager.addNetwork(NetworkEntry(networkIdentifier: "Alpha"))
         manager.addNetwork(NetworkEntry(networkIdentifier: "Beta"))
         manager.addNetwork(NetworkEntry(networkIdentifier: "Gamma"))
@@ -146,7 +146,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(manager.networks.map(\.networkIdentifier), ["Alpha", "Beta", "Gamma"])
     }
 
-    func testNetworkPersistence_withVPN() {
+    func testNetworkPersistenceWithVPN() {
         let network = NetworkEntry(networkIdentifier: "VPNWiFi", isVPN: true, allowedIPRanges: [TestIP.cidr10_8])
         manager.addNetwork(network)
 
@@ -154,7 +154,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(manager2.networks.first?.isVPN, true)
     }
 
-    func testNetworkForSSID_wildcardOnly() {
+    func testNetworkForSSIDWildcardOnly() {
         let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(catchAll)
 
@@ -162,7 +162,7 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(result?.networkIdentifier, "*")
     }
 
-    func testNetworkForSSID_specificPreferredOverWildcard() {
+    func testNetworkForSSIDSpecificPreferredOverWildcard() {
         let specific = NetworkEntry(networkIdentifier: "HomeWiFi", allowedIPRanges: [TestIP.private10])
         let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.stub])
         manager.addNetwork(catchAll)
@@ -172,13 +172,13 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(result?.networkIdentifier, "HomeWiFi")
     }
 
-    func testMalformedUserDefaults_networks() {
+    func testMalformedUserDefaultsNetworks() {
         testDefaults.set("not json".data(using: .utf8), forKey: "savedNetworks")
         let manager2 = NetworkManager(defaults: testDefaults)
         XCTAssertEqual(manager2.networks.count, 0)
     }
 
-    func testMalformedUserDefaults_settings() {
+    func testMalformedUserDefaultsSettings() {
         testDefaults.set("not json".data(using: .utf8), forKey: "appSettings")
         let manager2 = NetworkManager(defaults: testDefaults)
         XCTAssertEqual(manager2.settings.checkIntervalSeconds, 60)

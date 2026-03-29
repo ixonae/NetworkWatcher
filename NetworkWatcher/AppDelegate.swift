@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         case noNetwork
     }
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         networkMonitor.requestLocationPermission()
         setupStatusItem()
         startChecking()
@@ -312,7 +312,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 // MARK: - NSMenuDelegate
 
 extension AppDelegate: NSMenuDelegate {
-    func menuWillOpen(_ menu: NSMenu) {
+    func menuWillOpen(_: NSMenu) {
         refreshMenu()
     }
 }

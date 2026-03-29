@@ -11,7 +11,7 @@ struct NetworkListView: View {
             VStack(alignment: .leading, spacing: 0) {
                 List(networkManager.networks, selection: $selectedNetworkID) { network in
                     HStack {
-                        Image(systemName: network.isVPN ? "lock.shield" : network.networkIdentifier == "*" ? "globe" : "wifi")
+                        Image(systemName: iconName(for: network))
                             .foregroundColor(.secondary)
                         Text(network.networkIdentifier == "*" ? "Any network" : network.networkIdentifier)
                         Spacer()
@@ -61,6 +61,16 @@ struct NetworkListView: View {
             AddNetworkSheet(networkManager: networkManager) { newNetwork in
                 selectedNetworkID = newNetwork.id
             }
+        }
+    }
+
+    private func iconName(for network: NetworkEntry) -> String {
+        if network.isVPN {
+            return "lock.shield"
+        } else if network.networkIdentifier == "*" {
+            return "globe"
+        } else {
+            return "wifi"
         }
     }
 

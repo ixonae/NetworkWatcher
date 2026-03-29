@@ -19,6 +19,16 @@ This is useful if you want to make sure your VPN is active, or that your traffic
 - **Optional IP display** in the menu bar
 - **Launch at login** support
 
+## Installation
+
+1. Download `NetworkWatcher.zip` from the [latest release](../../releases/latest)
+2. Unzip and drag `Network Watcher.app` to your Applications folder
+3. Since the app is not notarized, macOS will block it on first launch. Remove the quarantine flag:
+   ```bash
+   xattr -cr "/Applications/Network Watcher.app"
+   ```
+4. Open the app
+
 ## Requirements
 
 - macOS 26.0+

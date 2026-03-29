@@ -116,7 +116,7 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate {
 
     // MARK: - CLLocationManagerDelegate
 
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    func locationManagerDidChangeAuthorization(_: CLLocationManager) {
         // Permission changed; the next SSID check will now work if authorized
     }
 }
