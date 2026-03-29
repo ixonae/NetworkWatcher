@@ -22,6 +22,8 @@
 		A1000000D /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001D /* GeneralSettingsView.swift */; };
 		A1000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000001E /* Assets.xcassets */; };
 		A1000000F /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000021 /* KeychainService.swift */; };
+		A10000022 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000023 /* AboutView.swift */; };
+		A10000024 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000025 /* UpdateChecker.swift */; };
 		B10000001 /* IPValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000011 /* IPValidatorTests.swift */; };
 		B10000002 /* NetworkManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012 /* NetworkManagerTests.swift */; };
 		B10000003 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000013 /* ModelTests.swift */; };
@@ -34,6 +36,8 @@
 		B1000000A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000014 /* AppSettings.swift */; };
 		B1000000B /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* ProfileManager.swift */; };
 		B10000016 /* TestConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000017 /* TestConstants.swift */; };
+		B10000018 /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000019 /* UpdateCheckerTests.swift */; };
+		B1000001A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000025 /* UpdateChecker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +74,8 @@
 		A1000001F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000020 /* NetworkWatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetworkWatcher.entitlements; sourceTree = "<group>"; };
 		A10000021 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		A10000023 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		A10000025 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		B10000010 /* NetworkWatcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NetworkWatcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000011 /* IPValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPValidatorTests.swift; sourceTree = "<group>"; };
 		B10000012 /* NetworkManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManagerTests.swift; sourceTree = "<group>"; };
@@ -77,6 +83,7 @@
 		B10000014 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
 		B10000015 /* IPCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCheckerTests.swift; sourceTree = "<group>"; };
 		B10000017 /* TestConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestConstants.swift; sourceTree = "<group>"; };
+		B10000019 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +176,7 @@
 				A10000018 /* ProfileManager.swift */,
 				A10000019 /* NetworkDisabler.swift */,
 				A10000021 /* KeychainService.swift */,
+				A10000025 /* UpdateChecker.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -180,6 +188,7 @@
 				A1000001B /* ProfileListView.swift */,
 				A1000001C /* ProfileEditView.swift */,
 				A1000001D /* GeneralSettingsView.swift */,
+				A10000023 /* AboutView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -193,6 +202,7 @@
 				B10000013 /* ModelTests.swift */,
 				B10000014 /* KeychainServiceTests.swift */,
 				B10000015 /* IPCheckerTests.swift */,
+				B10000019 /* UpdateCheckerTests.swift */,
 			);
 			path = NetworkWatcherTests;
 			sourceTree = "<group>";
@@ -301,6 +311,8 @@
 				A1000000C /* ProfileEditView.swift in Sources */,
 				A1000000D /* GeneralSettingsView.swift in Sources */,
 				A1000000F /* KeychainService.swift in Sources */,
+				A10000022 /* AboutView.swift in Sources */,
+				A10000024 /* UpdateChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -320,6 +332,8 @@
 				B10000004 /* KeychainServiceTests.swift in Sources */,
 				B10000005 /* IPCheckerTests.swift in Sources */,
 				B10000016 /* TestConstants.swift in Sources */,
+				B10000018 /* UpdateCheckerTests.swift in Sources */,
+				B1000001A /* UpdateChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

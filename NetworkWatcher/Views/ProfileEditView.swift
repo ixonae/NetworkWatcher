@@ -3,6 +3,7 @@ import SwiftUI
 struct NetworkDetailView: View {
     @Binding var network: NetworkEntry
     @State private var newIP = ""
+    @State private var newIPIsVPN = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -19,14 +20,6 @@ struct NetworkDetailView: View {
                     .foregroundColor(.secondary)
             }
 
-            Toggle("VPN connection", isOn: $network.isVPN)
-            if network.isVPN {
-                Text("When matched, the menu bar icon will indicate an active VPN connection.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.leading, 20)
-            }
-
             Divider()
 
             Text("Allowed IP Addresses / Ranges")
@@ -38,11 +31,21 @@ struct NetworkDetailView: View {
                     .padding(.vertical, 4)
             } else {
                 List {
-                    ForEach(Array(network.allowedIPRanges.enumerated()), id: \.offset) { index, ip in
+                    ForEach(Array(network.allowedIPRanges.enumerated()), id: \.element.id) { index, entry in
                         HStack {
-                            Text(ip)
+                            Text(entry.range)
                                 .font(.system(.body, design: .monospaced))
+                            if entry.isVPN {
+                                Image(systemName: "lock.shield")
+                                    .foregroundColor(.blue)
+                                    .help("VPN")
+                            }
                             Spacer()
+                            Toggle("VPN", isOn: Binding(
+                                get: { network.allowedIPRanges[index].isVPN },
+                                set: { network.allowedIPRanges[index].isVPN = $0 }
+                            ))
+                            .toggleStyle(.checkbox)
                             Button(action: {
                                 network.allowedIPRanges.remove(at: index)
                             }) {
@@ -60,11 +63,13 @@ struct NetworkDetailView: View {
                 TextField("IP, CIDR, or * (e.g. 1.2.3.4, 10.0.0.0/24, *)", text: $newIP)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { addIP() }
+                Toggle("VPN", isOn: $newIPIsVPN)
+                    .toggleStyle(.checkbox)
                 Button("Add") { addIP() }
                     .disabled(!IPValidator.isValidIPOrCIDR(newIP))
             }
 
-            Text("Use a specific IP (1.2.3.4), a CIDR range (10.0.0.0/24), or * to allow any IP address on this network.")
+            Text("Use a specific IP (1.2.3.4), a CIDR range (10.0.0.0/24), or * to allow any IP address on this network. Check VPN to indicate this IP/range is accessed through a VPN.")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -74,7 +79,7 @@ struct NetworkDetailView: View {
     }
 
     private var iconName: String {
-        if network.isVPN { return "lock.shield" }
+        if network.allowedIPRanges.contains(where: { $0.isVPN }) { return "lock.shield" }
         if network.networkIdentifier == "*" { return "globe" }
         return "wifi"
     }
@@ -82,7 +87,8 @@ struct NetworkDetailView: View {
     private func addIP() {
         let trimmed = newIP.trimmingCharacters(in: .whitespaces)
         guard IPValidator.isValidIPOrCIDR(trimmed) else { return }
-        network.allowedIPRanges.append(trimmed)
+        network.allowedIPRanges.append(AllowedIPEntry(range: trimmed, isVPN: newIPIsVPN))
         newIP = ""
+        newIPIsVPN = false
     }
 }

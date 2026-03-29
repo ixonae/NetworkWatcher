@@ -62,6 +62,12 @@ struct GeneralSettingsView: View {
                     Text("Networks without configured IPs will be considered valid and won't trigger alerts.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
+
+                    Toggle("Mute alerts", isOn: $settings.muteAlerts)
+
+                    Text("Suppress popup alerts for IP mismatches and restorations. The menu bar icon will still update.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 } header: {
                     Text("Monitoring")
                 }

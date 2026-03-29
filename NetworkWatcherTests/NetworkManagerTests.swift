@@ -32,10 +32,10 @@ final class NetworkManagerTests: XCTestCase {
         var network = NetworkEntry(networkIdentifier: "TestWiFi")
         manager.addNetwork(network)
 
-        network.allowedIPRanges = [TestIP.stub]
+        network.allowedIPRanges = [AllowedIPEntry(range: TestIP.stub)]
         manager.updateNetwork(network)
 
-        XCTAssertEqual(manager.networks.first?.allowedIPRanges, [TestIP.stub])
+        XCTAssertEqual(manager.networks.first?.allowedIPRanges.first?.range, TestIP.stub)
     }
 
     func testDeleteNetwork() {
@@ -50,7 +50,7 @@ final class NetworkManagerTests: XCTestCase {
     // MARK: - networkForSSID
 
     func testNetworkForSSIDExactMatch() {
-        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
+        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(network)
 
         let result = manager.networkForSSID("MyWiFi")
@@ -58,7 +58,7 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSIDCaseInsensitive() {
-        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
+        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(network)
 
         let result = manager.networkForSSID("mywifi")
@@ -66,7 +66,7 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSIDNoMatchNoWildcard() {
-        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
+        let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(network)
 
         let result = manager.networkForSSID("OtherWiFi")
@@ -74,16 +74,14 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSIDFallbackToWildcard() {
-        let specific = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [TestIP.stub])
-        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.secondary])
+        let specific = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
+        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [AllowedIPEntry(range: TestIP.secondary)])
         manager.addNetwork(specific)
         manager.addNetwork(catchAll)
 
-        // Specific match
         let result1 = manager.networkForSSID("MyWiFi")
         XCTAssertEqual(result1?.networkIdentifier, "MyWiFi")
 
-        // Falls back to wildcard
         let result2 = manager.networkForSSID("UnknownWiFi")
         XCTAssertEqual(result2?.networkIdentifier, "*")
     }
@@ -111,13 +109,13 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkPersistence() {
-        let network = NetworkEntry(networkIdentifier: "PersistTest", allowedIPRanges: [TestIP.cidr10_8])
+        let network = NetworkEntry(networkIdentifier: "PersistTest", allowedIPRanges: [AllowedIPEntry(range: TestIP.cidr10_8)])
         manager.addNetwork(network)
 
         let manager2 = NetworkManager(defaults: testDefaults)
         XCTAssertEqual(manager2.networks.count, 1)
         XCTAssertEqual(manager2.networks.first?.networkIdentifier, "PersistTest")
-        XCTAssertEqual(manager2.networks.first?.allowedIPRanges, [TestIP.cidr10_8])
+        XCTAssertEqual(manager2.networks.first?.allowedIPRanges.first?.range, TestIP.cidr10_8)
     }
 
     // MARK: - Edge Cases
@@ -146,16 +144,18 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(manager.networks.map(\.networkIdentifier), ["Alpha", "Beta", "Gamma"])
     }
 
-    func testNetworkPersistenceWithVPN() {
-        let network = NetworkEntry(networkIdentifier: "VPNWiFi", isVPN: true, allowedIPRanges: [TestIP.cidr10_8])
+    func testNetworkPersistenceWithVPNOnIPEntry() {
+        let vpnEntry = AllowedIPEntry(range: TestIP.cidr10_8, isVPN: true)
+        let network = NetworkEntry(networkIdentifier: "VPNWiFi", allowedIPRanges: [vpnEntry])
         manager.addNetwork(network)
 
         let manager2 = NetworkManager(defaults: testDefaults)
-        XCTAssertEqual(manager2.networks.first?.isVPN, true)
+        XCTAssertEqual(manager2.networks.first?.allowedIPRanges.first?.isVPN, true)
+        XCTAssertEqual(manager2.networks.first?.allowedIPRanges.first?.range, TestIP.cidr10_8)
     }
 
     func testNetworkForSSIDWildcardOnly() {
-        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.stub])
+        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(catchAll)
 
         let result = manager.networkForSSID("AnyNetwork")
@@ -163,8 +163,8 @@ final class NetworkManagerTests: XCTestCase {
     }
 
     func testNetworkForSSIDSpecificPreferredOverWildcard() {
-        let specific = NetworkEntry(networkIdentifier: "HomeWiFi", allowedIPRanges: [TestIP.private10])
-        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [TestIP.stub])
+        let specific = NetworkEntry(networkIdentifier: "HomeWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.private10)])
+        let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(catchAll)
         manager.addNetwork(specific)
 
@@ -184,14 +184,22 @@ final class NetworkManagerTests: XCTestCase {
         XCTAssertEqual(manager2.settings.checkIntervalSeconds, 60)
     }
 
-    // MARK: - Default settings
-
     func testDefaultSettings() {
         let settings = AppSettings()
         XCTAssertEqual(settings.checkIntervalSeconds, 60)
         XCTAssertFalse(settings.showIPInMenuBar)
         XCTAssertFalse(settings.launchAtLogin)
         XCTAssertFalse(settings.allowUnconfiguredNetworks)
+        XCTAssertFalse(settings.muteAlerts)
         XCTAssertEqual(settings.ipLookupURL, "https://api.ipify.org?format=text")
+    }
+
+    func testMuteAlertsPersistence() {
+        var settings = AppSettings()
+        settings.muteAlerts = true
+        manager.updateSettings(settings)
+
+        let manager2 = NetworkManager(defaults: testDefaults)
+        XCTAssertTrue(manager2.settings.muteAlerts)
     }
 }

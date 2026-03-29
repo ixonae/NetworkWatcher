@@ -105,6 +105,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         showIPItem.target = self
         menu.addItem(showIPItem)
 
+        let muteAlertsItem = NSMenuItem(title: "Mute Alerts", action: #selector(toggleMuteAlerts), keyEquivalent: "")
+        muteAlertsItem.tag = 103
+        muteAlertsItem.state = networkManager.settings.muteAlerts ? .on : .off
+        muteAlertsItem.target = self
+        menu.addItem(muteAlertsItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let checkNowItem = NSMenuItem(title: "Check Now", action: #selector(checkNow), keyEquivalent: "r")
@@ -146,6 +152,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let showIPItem = menu.item(withTag: 101) {
             showIPItem.state = networkManager.settings.showIPInMenuBar ? .on : .off
         }
+
+        if let muteAlertsItem = menu.item(withTag: 103) {
+            muteAlertsItem.state = networkManager.settings.muteAlerts ? .on : .off
+        }
     }
 
     // MARK: - Actions
@@ -155,6 +165,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         settings.showIPInMenuBar.toggle()
         networkManager.updateSettings(settings)
         updateMenuBarIPDisplay()
+        refreshMenu()
+    }
+
+    @objc private func toggleMuteAlerts() {
+        var settings = networkManager.settings
+        settings.muteAlerts.toggle()
+        networkManager.updateSettings(settings)
         refreshMenu()
     }
 
@@ -228,40 +245,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let networkName = matchedNetwork?.networkIdentifier
                 ?? activeIdentifiers.first
                 ?? "Unknown"
+            let isMuted = networkManager.settings.muteAlerts
 
             if isUnconfigured {
                 if networkManager.settings.allowUnconfiguredNetworks {
                     let wasInMismatch = mismatchAlertAcknowledged
                     ipStatus = .match
                     mismatchAlertAcknowledged = false
-                    if wasInMismatch {
+                    if wasInMismatch && !isMuted {
                         showRestoredAlert(ip: ip, networkName: networkName)
                     }
                 } else {
                     ipStatus = .mismatch
 
                     if !mismatchAlertAcknowledged {
-                        showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
+                        if !isMuted {
+                            showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
+                        }
                         mismatchAlertAcknowledged = true
                     }
 
                 }
-            } else if IPValidator.validate(ip: ip, against: matchedNetwork!.allowedIPRanges) {
-                let wasInMismatch = mismatchAlertAcknowledged
-                ipStatus = matchedNetwork!.isVPN ? .matchVPN : .match
-                mismatchAlertAcknowledged = false
-                if wasInMismatch {
-                    showRestoredAlert(ip: ip, networkName: networkName)
-                }
             } else {
-                ipStatus = .mismatch
+                let result = IPValidator.validate(ip: ip, against: matchedNetwork!.allowedIPRanges)
+                if result.matched {
+                    let wasInMismatch = mismatchAlertAcknowledged
+                    ipStatus = result.isVPN ? .matchVPN : .match
+                    mismatchAlertAcknowledged = false
+                    if wasInMismatch && !isMuted {
+                        showRestoredAlert(ip: ip, networkName: networkName)
+                    }
+                } else {
+                    ipStatus = .mismatch
 
-                if !mismatchAlertAcknowledged {
-                    showMismatchAlert(ip: ip, network: matchedNetwork!)
-                    mismatchAlertAcknowledged = true
+                    if !mismatchAlertAcknowledged {
+                        if !isMuted {
+                            showMismatchAlert(ip: ip, network: matchedNetwork!)
+                        }
+                        mismatchAlertAcknowledged = true
+                    }
                 }
-
-
             }
 
             updateStatusIcon()

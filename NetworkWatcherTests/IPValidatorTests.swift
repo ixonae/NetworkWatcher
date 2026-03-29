@@ -2,6 +2,16 @@ import XCTest
 
 final class IPValidatorTests: XCTestCase {
 
+    // MARK: - Helpers
+
+    private func entries(_ ranges: [String]) -> [AllowedIPEntry] {
+        ranges.map { AllowedIPEntry(range: $0) }
+    }
+
+    private func vpnEntry(_ range: String) -> AllowedIPEntry {
+        AllowedIPEntry(range: range, isVPN: true)
+    }
+
     // MARK: - ipToUInt32
 
     func testIPToUInt32ValidIP() {
@@ -54,38 +64,105 @@ final class IPValidatorTests: XCTestCase {
         XCTAssertFalse(IPValidator.matchesCIDR(ip: TestIP.stub, cidr: "\(TestIP.stub)/-1"))
     }
 
-    // MARK: - validate
+    // MARK: - validate (matched)
 
     func testValidateExactMatch() {
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.stub, against: [TestIP.stub]))
-        XCTAssertFalse(IPValidator.validate(ip: TestIP.stubAlt, against: [TestIP.stub]))
+        let result = IPValidator.validate(ip: TestIP.stub, against: entries([TestIP.stub]))
+        XCTAssertTrue(result.matched)
+        XCTAssertFalse(result.isVPN)
+    }
+
+    func testValidateExactNoMatch() {
+        let result = IPValidator.validate(ip: TestIP.stubAlt, against: entries([TestIP.stub]))
+        XCTAssertFalse(result.matched)
     }
 
     func testValidateCidrMatch() {
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.private10_50, against: [TestIP.cidr10_24]))
-        XCTAssertFalse(IPValidator.validate(ip: TestIP.private10Alt, against: [TestIP.cidr10_24]))
+        let result = IPValidator.validate(ip: TestIP.private10_50, against: entries([TestIP.cidr10_24]))
+        XCTAssertTrue(result.matched)
+    }
+
+    func testValidateCidrNoMatch() {
+        let result = IPValidator.validate(ip: TestIP.private10Alt, against: entries([TestIP.cidr10_24]))
+        XCTAssertFalse(result.matched)
     }
 
     func testValidateWildcard() {
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.stub, against: ["*"]))
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.broadcast, against: ["*"]))
+        let result1 = IPValidator.validate(ip: TestIP.stub, against: entries(["*"]))
+        XCTAssertTrue(result1.matched)
+
+        let result2 = IPValidator.validate(ip: TestIP.broadcast, against: entries(["*"]))
+        XCTAssertTrue(result2.matched)
     }
 
     func testValidateMultipleRanges() {
-        let ranges = [TestIP.cidr10_24, TestIP.cidr192_24, TestIP.dns]
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.private10_5, against: ranges))
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.private192_100, against: ranges))
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.dns, against: ranges))
-        XCTAssertFalse(IPValidator.validate(ip: TestIP.private172_16, against: ranges))
+        let rangeEntries = entries([TestIP.cidr10_24, TestIP.cidr192_24, TestIP.dns])
+
+        XCTAssertTrue(IPValidator.validate(ip: TestIP.private10_5, against: rangeEntries).matched)
+        XCTAssertTrue(IPValidator.validate(ip: TestIP.private192_100, against: rangeEntries).matched)
+        XCTAssertTrue(IPValidator.validate(ip: TestIP.dns, against: rangeEntries).matched)
+        XCTAssertFalse(IPValidator.validate(ip: TestIP.private172_16, against: rangeEntries).matched)
     }
 
     func testValidateEmptyRanges() {
-        XCTAssertFalse(IPValidator.validate(ip: TestIP.stub, against: []))
+        let result = IPValidator.validate(ip: TestIP.stub, against: [])
+        XCTAssertFalse(result.matched)
     }
 
     func testValidateWhitespaceTrimming() {
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.stub, against: ["  \(TestIP.stub)  "]))
-        XCTAssertTrue(IPValidator.validate(ip: TestIP.stub, against: [" * "]))
+        let result1 = IPValidator.validate(ip: TestIP.stub, against: [AllowedIPEntry(range: "  \(TestIP.stub)  ")])
+        XCTAssertTrue(result1.matched)
+
+        let result2 = IPValidator.validate(ip: TestIP.stub, against: [AllowedIPEntry(range: " * ")])
+        XCTAssertTrue(result2.matched)
+    }
+
+    // MARK: - validate (VPN flag)
+
+    func testValidateVPNFlagReturned() {
+        let result = IPValidator.validate(ip: TestIP.stub, against: [vpnEntry(TestIP.stub)])
+        XCTAssertTrue(result.matched)
+        XCTAssertTrue(result.isVPN)
+    }
+
+    func testValidateNonVPNFlagReturned() {
+        let result = IPValidator.validate(ip: TestIP.stub, against: entries([TestIP.stub]))
+        XCTAssertTrue(result.matched)
+        XCTAssertFalse(result.isVPN)
+    }
+
+    func testValidateVPNFlagFromMatchingEntry() {
+        let mixed = [
+            AllowedIPEntry(range: TestIP.cidr10_24, isVPN: false),
+            AllowedIPEntry(range: TestIP.cidr192_24, isVPN: true),
+        ]
+        // Should match the second entry (VPN)
+        let result = IPValidator.validate(ip: TestIP.private192_100, against: mixed)
+        XCTAssertTrue(result.matched)
+        XCTAssertTrue(result.isVPN)
+
+        // Should match the first entry (non-VPN)
+        let result2 = IPValidator.validate(ip: TestIP.private10_50, against: mixed)
+        XCTAssertTrue(result2.matched)
+        XCTAssertFalse(result2.isVPN)
+    }
+
+    func testValidateVPNWildcard() {
+        let result = IPValidator.validate(ip: TestIP.stub, against: [vpnEntry("*")])
+        XCTAssertTrue(result.matched)
+        XCTAssertTrue(result.isVPN)
+    }
+
+    func testValidateVPNCIDR() {
+        let result = IPValidator.validate(ip: TestIP.private10_50, against: [vpnEntry(TestIP.cidr10_24)])
+        XCTAssertTrue(result.matched)
+        XCTAssertTrue(result.isVPN)
+    }
+
+    func testValidateNoMatchReturnsFalseVPN() {
+        let result = IPValidator.validate(ip: TestIP.stub, against: [vpnEntry(TestIP.secondary)])
+        XCTAssertFalse(result.matched)
+        XCTAssertFalse(result.isVPN)
     }
 
     // MARK: - isValidIPOrCIDR
