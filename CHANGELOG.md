@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/ixonae/NetworkWatcher/compare/v1.0.2...v1.1.0) (2026-03-29)
+
+
+### Features
+
+* add mute alerts, per-IP VPN flag, duplicate network prevention, and About tab ([a55423b](https://github.com/ixonae/NetworkWatcher/commit/a55423b162da67eef4ea809becd5976ec54893d0))
+
 ## [1.0.2](https://github.com/ixonae/NetworkWatcher/compare/v1.0.1...v1.0.2) (2026-03-29)
 
 
