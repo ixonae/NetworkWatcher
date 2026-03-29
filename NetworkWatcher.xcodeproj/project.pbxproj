@@ -1,0 +1,561 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000001 /* NetworkWatcherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000011 /* NetworkWatcherApp.swift */; };
+		A10000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012 /* AppDelegate.swift */; };
+		A10000003 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000013 /* Profile.swift */; };
+		A10000004 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000014 /* AppSettings.swift */; };
+		A10000005 /* IPChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000015 /* IPChecker.swift */; };
+		A10000006 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000016 /* NetworkMonitor.swift */; };
+		A10000007 /* IPValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000017 /* IPValidator.swift */; };
+		A10000008 /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* ProfileManager.swift */; };
+		A10000009 /* NetworkDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000019 /* NetworkDisabler.swift */; };
+		A1000000A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001A /* SettingsView.swift */; };
+		A1000000B /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001B /* ProfileListView.swift */; };
+		A1000000C /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001C /* ProfileEditView.swift */; };
+		A1000000D /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001D /* GeneralSettingsView.swift */; };
+		A1000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000001E /* Assets.xcassets */; };
+		A1000000F /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000021 /* KeychainService.swift */; };
+		B10000001 /* IPValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000011 /* IPValidatorTests.swift */; };
+		B10000002 /* NetworkManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012 /* NetworkManagerTests.swift */; };
+		B10000003 /* ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000013 /* ModelTests.swift */; };
+		B10000004 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000014 /* KeychainServiceTests.swift */; };
+		B10000005 /* IPCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000015 /* IPCheckerTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B10000020 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000070 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000050;
+			remoteInfo = NetworkWatcher;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		217451092F78C38000F906C8 /* release.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = release.yml; sourceTree = "<group>"; };
+		2174510A2F78C38000F906C8 /* tests.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = tests.yml; sourceTree = "<group>"; };
+		2174510D2F78C38000F906C8 /* .releaserc.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = .releaserc.json; sourceTree = SOURCE_ROOT; };
+		2174510E2F78C6FA00F906C8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		A10000010 /* Network Watcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Network Watcher.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000011 /* NetworkWatcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkWatcherApp.swift; sourceTree = "<group>"; };
+		A10000012 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A10000013 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		A10000014 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A10000015 /* IPChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPChecker.swift; sourceTree = "<group>"; };
+		A10000016 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		A10000017 /* IPValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPValidator.swift; sourceTree = "<group>"; };
+		A10000018 /* ProfileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManager.swift; sourceTree = "<group>"; };
+		A10000019 /* NetworkDisabler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkDisabler.swift; sourceTree = "<group>"; };
+		A1000001A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1000001B /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
+		A1000001C /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
+		A1000001D /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		A1000001E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1000001F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000020 /* NetworkWatcher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NetworkWatcher.entitlements; sourceTree = "<group>"; };
+		A10000021 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		B10000010 /* NetworkWatcherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NetworkWatcherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000011 /* IPValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPValidatorTests.swift; sourceTree = "<group>"; };
+		B10000012 /* NetworkManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManagerTests.swift; sourceTree = "<group>"; };
+		B10000013 /* ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelTests.swift; sourceTree = "<group>"; };
+		B10000014 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
+		B10000015 /* IPCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCheckerTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000030 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000030 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2174510B2F78C38000F906C8 /* workflows */ = {
+			isa = PBXGroup;
+			children = (
+				217451092F78C38000F906C8 /* release.yml */,
+				2174510A2F78C38000F906C8 /* tests.yml */,
+			);
+			path = workflows;
+			sourceTree = "<group>";
+		};
+		2174510C2F78C38000F906C8 /* .github */ = {
+			isa = PBXGroup;
+			children = (
+				2174510B2F78C38000F906C8 /* workflows */,
+			);
+			path = .github;
+			sourceTree = SOURCE_ROOT;
+		};
+		A10000040 = {
+			isa = PBXGroup;
+			children = (
+				2174510C2F78C38000F906C8 /* .github */,
+				2174510E2F78C6FA00F906C8 /* README.md */,
+				2174510D2F78C38000F906C8 /* .releaserc.json */,
+				A10000041 /* NetworkWatcher */,
+				B10000040 /* NetworkWatcherTests */,
+				A10000042 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000041 /* NetworkWatcher */ = {
+			isa = PBXGroup;
+			children = (
+				A10000011 /* NetworkWatcherApp.swift */,
+				A10000012 /* AppDelegate.swift */,
+				A10000043 /* Models */,
+				A10000044 /* Services */,
+				A10000045 /* Views */,
+				A1000001E /* Assets.xcassets */,
+				A1000001F /* Info.plist */,
+				A10000020 /* NetworkWatcher.entitlements */,
+			);
+			path = NetworkWatcher;
+			sourceTree = "<group>";
+		};
+		A10000042 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000010 /* Network Watcher.app */,
+				B10000010 /* NetworkWatcherTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000043 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A10000013 /* Profile.swift */,
+				A10000014 /* AppSettings.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A10000044 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A10000015 /* IPChecker.swift */,
+				A10000016 /* NetworkMonitor.swift */,
+				A10000017 /* IPValidator.swift */,
+				A10000018 /* ProfileManager.swift */,
+				A10000019 /* NetworkDisabler.swift */,
+				A10000021 /* KeychainService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A10000045 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A1000001A /* SettingsView.swift */,
+				A1000001B /* ProfileListView.swift */,
+				A1000001C /* ProfileEditView.swift */,
+				A1000001D /* GeneralSettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B10000040 /* NetworkWatcherTests */ = {
+			isa = PBXGroup;
+			children = (
+				B10000011 /* IPValidatorTests.swift */,
+				B10000012 /* NetworkManagerTests.swift */,
+				B10000013 /* ModelTests.swift */,
+				B10000014 /* KeychainServiceTests.swift */,
+				B10000015 /* IPCheckerTests.swift */,
+			);
+			path = NetworkWatcherTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000050 /* NetworkWatcher */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000060 /* Build configuration list for PBXNativeTarget "NetworkWatcher" */;
+			buildPhases = (
+				A10000051 /* Sources */,
+				A10000030 /* Frameworks */,
+				A10000052 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NetworkWatcher;
+			productName = NetworkWatcher;
+			productReference = A10000010 /* Network Watcher.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B10000050 /* NetworkWatcherTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000060 /* Build configuration list for PBXNativeTarget "NetworkWatcherTests" */;
+			buildPhases = (
+				B10000051 /* Sources */,
+				B10000030 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B10000021 /* PBXTargetDependency */,
+			);
+			name = NetworkWatcherTests;
+			productName = NetworkWatcherTests;
+			productReference = B10000010 /* NetworkWatcherTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000070 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 2640;
+				TargetAttributes = {
+					A10000050 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					B10000050 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = A10000050;
+					};
+				};
+			};
+			buildConfigurationList = A10000080 /* Build configuration list for PBXProject "NetworkWatcher" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000040;
+			productRefGroup = A10000042 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000050 /* NetworkWatcher */,
+				B10000050 /* NetworkWatcherTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000052 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000001 /* NetworkWatcherApp.swift in Sources */,
+				A10000002 /* AppDelegate.swift in Sources */,
+				A10000003 /* Profile.swift in Sources */,
+				A10000004 /* AppSettings.swift in Sources */,
+				A10000005 /* IPChecker.swift in Sources */,
+				A10000006 /* NetworkMonitor.swift in Sources */,
+				A10000007 /* IPValidator.swift in Sources */,
+				A10000008 /* ProfileManager.swift in Sources */,
+				A10000009 /* NetworkDisabler.swift in Sources */,
+				A1000000A /* SettingsView.swift in Sources */,
+				A1000000B /* ProfileListView.swift in Sources */,
+				A1000000C /* ProfileEditView.swift in Sources */,
+				A1000000D /* GeneralSettingsView.swift in Sources */,
+				A1000000F /* KeychainService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000051 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000001 /* IPValidatorTests.swift in Sources */,
+				B10000002 /* NetworkManagerTests.swift in Sources */,
+				B10000003 /* ModelTests.swift in Sources */,
+				B10000004 /* KeychainServiceTests.swift in Sources */,
+				B10000005 /* IPCheckerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B10000021 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000050 /* NetworkWatcher */;
+			targetProxy = B10000020 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000090 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10000091 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A10000092 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NetworkWatcher/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Network Watcher";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ixonae.NetworkWatcher;
+				PRODUCT_NAME = "Network Watcher";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A10000093 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NetworkWatcher/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Network Watcher";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ixonae.NetworkWatcher;
+				PRODUCT_NAME = "Network Watcher";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		B10000092 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ixonae.NetworkWatcherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Network Watcher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Network Watcher";
+			};
+			name = Debug;
+		};
+		B10000093 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ixonae.NetworkWatcherTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Network Watcher.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Network Watcher";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000060 /* Build configuration list for PBXNativeTarget "NetworkWatcher" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000092 /* Debug */,
+				A10000093 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000080 /* Build configuration list for PBXProject "NetworkWatcher" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000090 /* Debug */,
+				A10000091 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000060 /* Build configuration list for PBXNativeTarget "NetworkWatcherTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000092 /* Debug */,
+				B10000093 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000070 /* Project object */;
+}
