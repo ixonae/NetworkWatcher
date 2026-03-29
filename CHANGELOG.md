@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/ixonae/NetworkWatcher/compare/v1.0.1...v1.0.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* enable App Sandbox to persist keychain and location permissions across updates ([82ff308](https://github.com/ixonae/NetworkWatcher/commit/82ff308680224d76a0e14886e3efd786c14426d6))
+
 ## [1.0.1](https://github.com/ixonae/NetworkWatcher/compare/v1.0.0...v1.0.1) (2026-03-29)
 
 
