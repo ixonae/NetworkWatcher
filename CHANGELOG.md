@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/ixonae/NetworkWatcher/compare/v1.1.1...v1.1.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* use stable signing identity and fix version display ([5c0604e](https://github.com/ixonae/NetworkWatcher/commit/5c0604ed63741d4dcd4b0366eddd590e0680055c))
+
 ## [1.1.1](https://github.com/ixonae/NetworkWatcher/compare/v1.1.0...v1.1.1) (2026-03-29)
 
 
