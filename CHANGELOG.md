@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/ixonae/NetworkWatcher/compare/v1.0.0...v1.0.1) (2026-03-29)
+
+
+### Bug Fixes
+
+* release process ([bb93498](https://github.com/ixonae/NetworkWatcher/commit/bb93498633847bea42237c0823698987feca996b))
+
 # 1.0.0 (2026-03-29)
 
 
