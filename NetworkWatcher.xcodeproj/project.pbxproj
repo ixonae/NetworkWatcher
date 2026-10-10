@@ -36,6 +36,8 @@
 		B1000000A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000014 /* AppSettings.swift */; };
 		B1000000B /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* ProfileManager.swift */; };
 		B10000016 /* TestConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000017 /* TestConstants.swift */; };
+		B1000001B /* NetworkMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001C /* NetworkMonitorTests.swift */; };
+		B1000001D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000016 /* NetworkMonitor.swift */; };
 		B10000018 /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000019 /* UpdateCheckerTests.swift */; };
 		B1000001A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000025 /* UpdateChecker.swift */; };
 /* End PBXBuildFile section */
@@ -83,6 +85,7 @@
 		B10000014 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
 		B10000015 /* IPCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPCheckerTests.swift; sourceTree = "<group>"; };
 		B10000017 /* TestConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestConstants.swift; sourceTree = "<group>"; };
+		B1000001C /* NetworkMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitorTests.swift; sourceTree = "<group>"; };
 		B10000019 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -203,6 +206,7 @@
 				B10000014 /* KeychainServiceTests.swift */,
 				B10000015 /* IPCheckerTests.swift */,
 				B10000019 /* UpdateCheckerTests.swift */,
+				B1000001C /* NetworkMonitorTests.swift */,
 			);
 			path = NetworkWatcherTests;
 			sourceTree = "<group>";
@@ -334,6 +338,8 @@
 				B10000016 /* TestConstants.swift in Sources */,
 				B10000018 /* UpdateCheckerTests.swift in Sources */,
 				B1000001A /* UpdateChecker.swift in Sources */,
+				B1000001B /* NetworkMonitorTests.swift in Sources */,
+				B1000001D /* NetworkMonitor.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

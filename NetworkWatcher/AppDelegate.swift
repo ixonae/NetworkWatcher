@@ -15,6 +15,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @Published var currentIP: String = "Checking..."
     @Published var ipStatus: IPStatus = .unknown
     private var mismatchAlertAcknowledged = false
+    /// Network the current mismatch alert was shown for, so moving to another bad network alerts again.
+    private var acknowledgedMismatchNetwork: String?
+    /// Incremented per check so a slower, older check can't overwrite a newer result.
+    private var checkGeneration = 0
     private var lastCheckTime: Date?
 
     enum IPStatus {
@@ -29,6 +33,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         networkMonitor.requestLocationPermission()
         setupStatusItem()
         startChecking()
+
+        networkMonitor.onNetworkChange = { [weak self] in
+            Task { await self?.performIPCheck() }
+        }
+        networkMonitor.startMonitoring()
 
         networkManager.$settings
             .sink { [weak self] settings in
@@ -224,9 +233,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     func performIPCheck() async {
+        checkGeneration += 1
+        let generation = checkGeneration
+
         do {
             let authToken = KeychainService.load(key: "ipLookupAuthToken")
             let ip = try await ipChecker.fetchExternalIP(from: networkManager.settings.ipLookupURL, authToken: authToken)
+            guard generation == checkGeneration else { return }
             currentIP = ip
             lastCheckTime = Date()
 
@@ -258,11 +271,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     ipStatus = .mismatch
 
-                    if !mismatchAlertAcknowledged {
+                    if !mismatchAlertAcknowledged || acknowledgedMismatchNetwork != networkName {
+                        // Mark acknowledged before the modal alert: checks can run while it is open.
+                        mismatchAlertAcknowledged = true
+                        acknowledgedMismatchNetwork = networkName
                         if !isMuted {
                             showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
                         }
-                        mismatchAlertAcknowledged = true
                     }
 
                 }
@@ -278,11 +293,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 } else {
                     ipStatus = .mismatch
 
-                    if !mismatchAlertAcknowledged {
+                    if !mismatchAlertAcknowledged || acknowledgedMismatchNetwork != networkName {
+                        // Mark acknowledged before the modal alert: checks can run while it is open.
+                        mismatchAlertAcknowledged = true
+                        acknowledgedMismatchNetwork = networkName
                         if !isMuted {
                             showMismatchAlert(ip: ip, network: matchedNetwork!)
                         }
-                        mismatchAlertAcknowledged = true
                     }
                 }
             }
@@ -291,6 +308,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             refreshMenu()
 
         } catch {
+            guard generation == checkGeneration else { return }
             currentIP = "Error"
             ipStatus = .unknown
             updateStatusIcon()
