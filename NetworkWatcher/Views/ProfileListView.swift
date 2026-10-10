@@ -26,9 +26,11 @@ struct NetworkListView: View {
                 HStack {
                     Button(action: { showingAddSheet = true }) {
                         Image(systemName: "plus")
+                            .frame(width: 14, height: 14)
                     }
                     Button(action: deleteSelected) {
                         Image(systemName: "minus")
+                            .frame(width: 14, height: 14)
                     }
                     .disabled(selectedNetworkID == nil)
                     Spacer()

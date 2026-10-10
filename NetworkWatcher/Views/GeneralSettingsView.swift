@@ -13,8 +13,10 @@ struct GeneralSettingsView: View {
             Form {
                 Section {
                     LabeledContent("Check every") {
-                        HStack(spacing: 6) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
                             TextField("", value: $settings.checkIntervalSeconds, format: .number)
+                                .labelsHidden()
+                                .multilineTextAlignment(.trailing)
                                 .frame(width: 60)
                             Text("seconds")
                                 .foregroundStyle(.secondary)
