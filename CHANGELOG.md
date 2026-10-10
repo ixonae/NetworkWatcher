@@ -1,3 +1,17 @@
+# [1.2.0](https://github.com/ixonae/NetworkWatcher/compare/v1.1.2...v1.2.0) (2026-10-10)
+
+
+### Bug Fixes
+
+* align check interval field and equalize +/- button sizes ([1a88d73](https://github.com/ixonae/NetworkWatcher/commit/1a88d738489198413bb6cdabe0acc7a9efcf35bf))
+* revert CI runners to macos-26 ([4f498a4](https://github.com/ixonae/NetworkWatcher/commit/4f498a4a27762d0c42c1a817987daebaa7672055))
+
+
+### Features
+
+* add app icon and use it in the About view ([db421a2](https://github.com/ixonae/NetworkWatcher/commit/db421a23f447fcec0c87017f7a4cb47f30bc7b44))
+* recheck IP immediately on network changes ([da25fbd](https://github.com/ixonae/NetworkWatcher/commit/da25fbd3ed5b34c7acc82ece71941001de9f1117))
+
 ## [1.1.2](https://github.com/ixonae/NetworkWatcher/compare/v1.1.1...v1.1.2) (2026-03-29)
 
 
