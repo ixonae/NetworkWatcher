@@ -7,7 +7,7 @@ struct AboutView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(nsImage: NSApp.applicationIconImage)
+            Image("AboutIcon")
                 .resizable()
                 .frame(width: 80, height: 80)
 
