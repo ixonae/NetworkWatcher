@@ -1,3 +1,17 @@
+# [1.3.0](https://github.com/ixonae/NetworkWatcher/compare/v1.2.0...v1.3.0) (2026-11-14)
+
+
+### Bug Fixes
+
+* hardening and review follow-ups for alerts, lookups and settings ([#12](https://github.com/ixonae/NetworkWatcher/issues/12)) ([08d9221](https://github.com/ixonae/NetworkWatcher/commit/08d92210aa516bfc97f4f0fb7feea1c03622aebc))
+
+
+### Features
+
+* deliver alerts as notifications and react to settings changes immediately ([#11](https://github.com/ixonae/NetworkWatcher/issues/11)) ([8abf29b](https://github.com/ixonae/NetworkWatcher/commit/8abf29b738a1144229c10391324d49e5580b38f8))
+* detect USB/Thunderbolt interfaces and surface missing location permission ([#10](https://github.com/ixonae/NetworkWatcher/issues/10)) ([563164c](https://github.com/ixonae/NetworkWatcher/commit/563164cfc31db4329fca187f61cf3ef8c06564dd))
+* support IPv6 and harden IP lookups ([#9](https://github.com/ixonae/NetworkWatcher/issues/9)) ([3675156](https://github.com/ixonae/NetworkWatcher/commit/367515651d5aeb3bfd423c54f7c89c936e1d0cfb))
+
 # [1.2.0](https://github.com/ixonae/NetworkWatcher/compare/v1.1.2...v1.2.0) (2026-10-10)
 
 
