@@ -247,4 +247,54 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(try decodeSettings(ipLookupURL: "https://icanhazip.com/custom").ipLookupURL, "https://icanhazip.com/custom")
         XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ip.example.com").ipLookupURL, "https://ip.example.com")
     }
+
+    // MARK: - SettingsChange
+
+    func testFirstSettingsUpdateStartsTimerOnly() {
+        XCTAssertEqual(
+            SettingsChange.between(nil, AppSettings()),
+            SettingsChange(restartTimer: true, recheck: false, reevaluate: false)
+        )
+    }
+
+    func testUnchangedSettingsNeedNothing() {
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), AppSettings()),
+            SettingsChange(restartTimer: false, recheck: false, reevaluate: false)
+        )
+    }
+
+    func testIntervalChangeRestartsTimer() {
+        var new = AppSettings()
+        new.checkIntervalSeconds = 120
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), new),
+            SettingsChange(restartTimer: true, recheck: false, reevaluate: false)
+        )
+    }
+
+    func testLookupURLChangeTriggersRecheck() {
+        var new = AppSettings()
+        new.ipLookupURL = "https://ip.example.com"
+        XCTAssertTrue(SettingsChange.between(AppSettings(), new).recheck)
+    }
+
+    func testAllowUnconfiguredChangeTriggersReevaluation() {
+        var new = AppSettings()
+        new.allowUnconfiguredNetworks = true
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), new),
+            SettingsChange(restartTimer: false, recheck: false, reevaluate: true)
+        )
+    }
+
+    func testDisplayOnlyChangesNeedNothing() {
+        var new = AppSettings()
+        new.showIPInMenuBar = true
+        new.muteAlerts = true
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), new),
+            SettingsChange(restartTimer: false, recheck: false, reevaluate: false)
+        )
+    }
 }

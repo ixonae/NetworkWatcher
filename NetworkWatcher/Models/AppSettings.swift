@@ -40,3 +40,24 @@ struct AppSettings: Codable {
         ipLookupURL = Self.legacyPresetURLs[storedURL] ?? storedURL
     }
 }
+
+/// What a settings update requires from the running checks.
+struct SettingsChange: Equatable {
+    /// The check interval changed (or this is the first update), so the timer must be rescheduled.
+    var restartTimer: Bool
+    /// The lookup service changed, so a fresh lookup is needed.
+    var recheck: Bool
+    /// A rule-affecting option changed, so the last IP should be re-evaluated.
+    var reevaluate: Bool
+
+    static func between(_ old: AppSettings?, _ new: AppSettings) -> SettingsChange {
+        guard let old else {
+            return SettingsChange(restartTimer: true, recheck: false, reevaluate: false)
+        }
+        return SettingsChange(
+            restartTimer: old.checkIntervalSeconds != new.checkIntervalSeconds,
+            recheck: old.ipLookupURL != new.ipLookupURL,
+            reevaluate: old.allowUnconfiguredNetworks != new.allowUnconfiguredNetworks
+        )
+    }
+}

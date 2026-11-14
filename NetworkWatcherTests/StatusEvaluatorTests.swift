@@ -249,4 +249,55 @@ final class StatusEvaluatorTests: XCTestCase {
             XCTAssertFalse(NetworkEntry(networkIdentifier: wired).isWiFiNetwork, wired)
         }
     }
+
+    // MARK: - Re-evaluation after rule edits
+
+    func testInitFromSettingsCopiesOptions() {
+        var settings = AppSettings()
+        settings.allowUnconfiguredNetworks = true
+        settings.muteAlerts = true
+        let evaluator = StatusEvaluator(networks: [home], settings: settings)
+        XCTAssertEqual(evaluator.networks, [home])
+        XCTAssertTrue(evaluator.allowUnconfiguredNetworks)
+        XCTAssertTrue(evaluator.muteAlerts)
+    }
+
+    func testAddingCurrentIPToRulesTurnsMismatchIntoMatch() {
+        let before = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
+        XCTAssertEqual(before.status, .mismatch)
+
+        var edited = home
+        edited.allowedIPRanges.append(AllowedIPEntry(range: TestIP.dns))
+        let after = evaluator(networks: [edited]).evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: before.alertState)
+        XCTAssertEqual(after.status, .match)
+        XCTAssertFalse(after.alertState.mismatchAcknowledged)
+    }
+
+    func testMarkingRangeAsVPNSwitchesToVPNStatus() {
+        var edited = home
+        edited.allowedIPRanges[0].isVPN = true
+        let result = evaluator(networks: [edited]).evaluate(ip: TestIP.private192_100, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
+        XCTAssertEqual(result.status, .matchVPN)
+    }
+
+    func testRemovingCurrentRangeIsAcknowledgedSoNextCheckDoesNotAlert() {
+        var edited = home
+        edited.allowedIPRanges.removeAll()
+        edited.allowedIPRanges.append(AllowedIPEntry(range: TestIP.stub))
+
+        // Re-evaluation after the edit (its alert is discarded by the app)...
+        let afterEdit = evaluator(networks: [edited]).evaluate(ip: TestIP.private192_100, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
+        XCTAssertEqual(afterEdit.status, .mismatch)
+        XCTAssertTrue(afterEdit.alertState.mismatchAcknowledged)
+
+        // ...so the next periodic check with the same result stays quiet.
+        let nextCheck = evaluator(networks: [edited]).evaluate(ip: TestIP.private192_100, activeIdentifiers: ["HomeWiFi"], alertState: afterEdit.alertState)
+        XCTAssertNil(nextCheck.alert)
+    }
+
+    func testEnablingAllowUnconfiguredClearsUnconfiguredMismatch() {
+        let before = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: AlertState())
+        let after = evaluator(allowUnconfigured: true).evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: before.alertState)
+        XCTAssertEqual(after.status, .match)
+    }
 }

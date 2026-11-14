@@ -20,23 +20,66 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Why the last check failed, shown in the menu; nil after a successful check.
     private var lastFailureReason: String?
     private var lastCheckTime: Date?
+    /// Last IP the lookup returned, so rule changes can be re-evaluated without a new request.
+    private var lastFetchedIP: String?
+    /// Settings the timer and status were last configured from, to tell what a change affects.
+    private var appliedSettings: AppSettings?
 
     func applicationDidFinishLaunching(_: Notification) {
         networkMonitor.requestLocationPermission()
         setupStatusItem()
-        startChecking()
 
         networkMonitor.onNetworkChange = { [weak self] in
             Task { await self?.performIPCheck() }
         }
         networkMonitor.startMonitoring()
 
+        // @Published emits before the property changes, so always use the emitted value.
         networkManager.$settings
-            .sink { [weak self] settings in
-                self?.updateMenuBarIPDisplay()
-                self?.restartTimer()
-            }
+            .sink { [weak self] settings in self?.settingsDidChange(settings) }
             .store(in: &cancellables)
+        networkManager.$networks
+            .dropFirst()
+            .sink { [weak self] networks in self?.reevaluateStatus(networks: networks) }
+            .store(in: &cancellables)
+
+        Task { await performIPCheck() }
+    }
+
+    private func settingsDidChange(_ settings: AppSettings) {
+        let change = SettingsChange.between(appliedSettings, settings)
+        appliedSettings = settings
+
+        updateMenuBarIPDisplay(showIP: settings.showIPInMenuBar)
+        if change.restartTimer {
+            restartTimer(intervalSeconds: settings.checkIntervalSeconds)
+        }
+        if change.recheck {
+            Task { await performIPCheck() }
+        } else if change.reevaluate {
+            reevaluateStatus(settings: settings)
+        }
+    }
+
+    /// Re-applies the rules to the last fetched IP after the user edits them, without a new lookup.
+    /// No alert is shown for a change the user just made, but the alert state is updated so the
+    /// next periodic check doesn't raise one about it either.
+    private func reevaluateStatus(networks: [NetworkEntry]? = nil, settings: AppSettings? = nil) {
+        guard let ip = lastFetchedIP else { return }
+        let evaluator = StatusEvaluator(
+            networks: networks ?? networkManager.networks,
+            settings: settings ?? networkManager.settings
+        )
+        let evaluation = evaluator.evaluate(
+            ip: ip,
+            activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
+            alertState: alertState,
+            ssidBlockedByPermission: networkMonitor.isSSIDBlockedByPermission
+        )
+        ipStatus = evaluation.status
+        alertState = evaluation.alertState
+        updateStatusIcon()
+        refreshMenu()
     }
 
     // MARK: - Status Item
@@ -76,9 +119,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateMenuBarIPDisplay()
     }
 
-    private func updateMenuBarIPDisplay() {
+    private func updateMenuBarIPDisplay(showIP: Bool? = nil) {
         guard let button = statusItem.button else { return }
-        if networkManager.settings.showIPInMenuBar {
+        if showIP ?? networkManager.settings.showIPInMenuBar {
             button.title = " \(currentIP)"
         } else {
             button.title = ""
@@ -179,7 +222,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var settings = networkManager.settings
         settings.showIPInMenuBar.toggle()
         networkManager.updateSettings(settings)
-        updateMenuBarIPDisplay()
         refreshMenu()
     }
 
@@ -224,14 +266,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - IP Checking
 
-    private func startChecking() {
-        restartTimer()
-        Task { await performIPCheck() }
-    }
-
-    private func restartTimer() {
+    private func restartTimer(intervalSeconds: Int) {
         timer?.invalidate()
-        let interval = TimeInterval(max(networkManager.settings.checkIntervalSeconds, 5))
+        let interval = TimeInterval(max(intervalSeconds, 5))
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { await self?.performIPCheck(trigger: .timer) }
         }
@@ -247,14 +284,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let ip = try await ipChecker.fetchExternalIP(from: networkManager.settings.ipLookupURL, authToken: authToken)
             guard checkCoordinator.isCurrent(generation) else { return }
             currentIP = ip
+            lastFetchedIP = ip
             lastFailureReason = nil
             lastCheckTime = Date()
 
-            let evaluator = StatusEvaluator(
-                networks: networkManager.networks,
-                allowUnconfiguredNetworks: networkManager.settings.allowUnconfiguredNetworks,
-                muteAlerts: networkManager.settings.muteAlerts
-            )
+            let evaluator = StatusEvaluator(networks: networkManager.networks, settings: networkManager.settings)
             let evaluation = evaluator.evaluate(
                 ip: ip,
                 activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
