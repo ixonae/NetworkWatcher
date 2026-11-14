@@ -8,10 +8,18 @@ struct AppSettings: Codable {
     var muteAlerts: Bool = false
     var ipLookupURL: String = "https://api.ipify.org?format=text"
 
+    /// IPv4-only endpoints: dual-stack services return an IPv6 address when one is available,
+    /// which would not match the IPv4 rules most networks are configured with.
     static let predefinedURLs: [(name: String, url: String)] = [
-        ("ipify", "https://api.ipify.org?format=text"),
-        ("ifconfig.me", "https://ifconfig.me/ip"),
-        ("icanhazip.com", "https://icanhazip.com"),
+        ("ipify (IPv4)", "https://api.ipify.org?format=text"),
+        ("icanhazip (IPv4)", "https://ipv4.icanhazip.com"),
+        ("ident.me (IPv4)", "https://4.ident.me"),
+    ]
+
+    /// Former dual-stack presets, mapped to their IPv4-only replacements.
+    static let legacyPresetURLs: [String: String] = [
+        "https://icanhazip.com": "https://ipv4.icanhazip.com",
+        "https://ifconfig.me/ip": "https://4.ident.me",
     ]
 
     enum CodingKeys: String, CodingKey {
@@ -28,6 +36,7 @@ struct AppSettings: Codable {
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
         allowUnconfiguredNetworks = try container.decodeIfPresent(Bool.self, forKey: .allowUnconfiguredNetworks) ?? false
         muteAlerts = try container.decodeIfPresent(Bool.self, forKey: .muteAlerts) ?? false
-        ipLookupURL = try container.decodeIfPresent(String.self, forKey: .ipLookupURL) ?? "https://api.ipify.org?format=text"
+        let storedURL = try container.decodeIfPresent(String.self, forKey: .ipLookupURL) ?? "https://api.ipify.org?format=text"
+        ipLookupURL = Self.legacyPresetURLs[storedURL] ?? storedURL
     }
 }

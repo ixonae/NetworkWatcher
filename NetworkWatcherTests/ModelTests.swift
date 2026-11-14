@@ -203,4 +203,48 @@ final class ModelTests: XCTestCase {
         XCTAssertFalse(settings.muteAlerts)
         XCTAssertEqual(settings.ipLookupURL, "https://api.ipify.org?format=text")
     }
+
+    // MARK: - Lookup service presets
+
+    private func decodeSettings(ipLookupURL: String) throws -> AppSettings {
+        let json = #"{"ipLookupURL":"\#(ipLookupURL)"}"#
+        return try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+    }
+
+    func testPresetsAreIPv4Only() {
+        let urls = AppSettings.predefinedURLs.map(\.url)
+        XCTAssertEqual(urls, [
+            "https://api.ipify.org?format=text",
+            "https://ipv4.icanhazip.com",
+            "https://4.ident.me",
+        ])
+        XCTAssertTrue(AppSettings.predefinedURLs.allSatisfy { $0.name.contains("IPv4") })
+    }
+
+    func testDefaultURLIsAPreset() {
+        XCTAssertTrue(AppSettings.predefinedURLs.contains { $0.url == AppSettings().ipLookupURL })
+    }
+
+    func testLegacyIcanhazipPresetMigrates() throws {
+        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://icanhazip.com").ipLookupURL, "https://ipv4.icanhazip.com")
+    }
+
+    func testLegacyIfconfigPresetMigrates() throws {
+        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ifconfig.me/ip").ipLookupURL, "https://4.ident.me")
+    }
+
+    func testLegacyMigrationsTargetCurrentPresets() {
+        let presetURLs = Set(AppSettings.predefinedURLs.map(\.url))
+        for target in AppSettings.legacyPresetURLs.values {
+            XCTAssertTrue(presetURLs.contains(target), "\(target) is not a current preset")
+        }
+    }
+
+    func testCurrentPresetsAndCustomURLsAreNotMigrated() throws {
+        for preset in AppSettings.predefinedURLs {
+            XCTAssertEqual(try decodeSettings(ipLookupURL: preset.url).ipLookupURL, preset.url)
+        }
+        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://icanhazip.com/custom").ipLookupURL, "https://icanhazip.com/custom")
+        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ip.example.com").ipLookupURL, "https://ip.example.com")
+    }
 }
