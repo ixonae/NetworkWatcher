@@ -35,17 +35,6 @@ class NetworkManager: ObservableObject {
         saveNetworks()
     }
 
-    func networkForSSID(_ ssid: String) -> NetworkEntry? {
-        Self.network(forIdentifier: ssid, in: networks)
-    }
-
-    static func network(forIdentifier identifier: String, in networks: [NetworkEntry]) -> NetworkEntry? {
-        // Try exact match first, then fall back to catch-all "*"
-        return networks.first(where: {
-            $0.networkIdentifier.lowercased() == identifier.lowercased()
-        }) ?? networks.first(where: { $0.networkIdentifier == "*" })
-    }
-
     /// The configured network for the active connections: an exact match on any active identifier
     /// (in order) wins over the "*" catch-all, which only applies when no identifier matches exactly.
     static func network(forActiveIdentifiers identifiers: [String], in networks: [NetworkEntry]) -> NetworkEntry? {
