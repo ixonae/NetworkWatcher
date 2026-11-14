@@ -20,6 +20,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Why the last check failed, shown in the menu; nil after a successful check.
     private var lastFailureReason: String?
     private var lastCheckTime: Date?
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .medium
+        return formatter
+    }()
     /// Last IP the lookup returned, so rule changes can be re-evaluated without a new request.
     private var lastFetchedIP: String?
     /// Settings the timer and status were last configured from, to tell what a change affects.
@@ -203,10 +209,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let lastCheckItem = menu.item(withTag: 102) {
             if let lastCheck = lastCheckTime {
-                let formatter = DateFormatter()
-                formatter.dateStyle = .none
-                formatter.timeStyle = .medium
-                lastCheckItem.title = "Last check: \(formatter.string(from: lastCheck))"
+                lastCheckItem.title = "Last check: \(Self.timeFormatter.string(from: lastCheck))"
             } else {
                 lastCheckItem.title = "Last check: Never"
             }
@@ -321,6 +324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard checkCoordinator.isCurrent(generation) else { return }
             currentIP = "Unavailable"
             lastFailureReason = IPChecker.failureReason(for: error)
+            Log.network.error("IP lookup failed: \(error.localizedDescription, privacy: .public)")
             lastCheckTime = Date()
             ipStatus = .unknown
             updateStatusIcon()

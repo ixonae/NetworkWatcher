@@ -66,7 +66,7 @@ final class NotificationAlertPresenter: NSObject, AlertPresenter, UNUserNotifica
         let request = UNNotificationRequest(identifier: content.identifier, content: notification, trigger: nil)
         center.add(request) { error in
             if let error {
-                NSLog("NotificationAlertPresenter: failed to deliver \(content.identifier): \(error)")
+                Log.alerts.error("Failed to deliver notification \(content.identifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }

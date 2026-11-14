@@ -174,6 +174,9 @@ struct GeneralSettingsView: View {
 
     private func updateLaunchAtLogin(_ enabled: Bool) {
         launchAtLoginError = launchAtLogin.setEnabled(enabled)
+        if let launchAtLoginError {
+            Log.settings.error("\(launchAtLoginError, privacy: .public)")
+        }
         refreshLaunchAtLogin()
     }
 

@@ -49,7 +49,7 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
             do {
                 try wifiClient.startMonitoringEvent(with: event)
             } catch {
-                NSLog("NetworkMonitor: failed to monitor Wi-Fi event \(event.rawValue): \(error)")
+                Log.network.error("Failed to monitor Wi-Fi event \(event.rawValue): \(error.localizedDescription, privacy: .public)")
             }
         }
 
@@ -83,7 +83,8 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
             SCDynamicStoreSetDispatchQueue(store, DispatchQueue.main)
             dynamicStore = store
         } else {
-            NSLog("NetworkMonitor: failed to create dynamic store: \(SCErrorString(SCError()))")
+            let reason = String(cString: SCErrorString(SCError()))
+            Log.network.error("Failed to create dynamic store: \(reason, privacy: .public)")
         }
 
         NSWorkspace.shared.notificationCenter.addObserver(
@@ -227,10 +228,11 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
             return []
         }
         let wifiName = wifiClient.interface()?.interfaceName
+        let activeNames = Self.activeInterfaceNames()
 
         return interfaces.compactMap { iface in
             let bsdName = SCNetworkInterfaceGetBSDName(iface) as String? ?? ""
-            guard isInterfaceActive(bsdName),
+            guard activeNames.contains(bsdName),
                   let type = Self.classify(
                       bsdName: bsdName,
                       interfaceType: SCNetworkInterfaceGetInterfaceType(iface) as String? ?? "",
@@ -243,23 +245,37 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
         }
     }
 
-    private func isInterfaceActive(_ bsdName: String) -> Bool {
+    /// One address entry from getifaddrs.
+    struct InterfaceAddress: Equatable {
+        let name: String
+        let flags: Int32
+        let family: Int32
+    }
+
+    /// Names of interfaces that are up and running with an IPv4 or IPv6 address,
+    /// so IPv6-only links count as active too.
+    static func activeInterfaceNames(from addresses: [InterfaceAddress]) -> Set<String> {
+        let required = IFF_UP | IFF_RUNNING
+        return Set(addresses.lazy
+            .filter { $0.flags & required == required && ($0.family == AF_INET || $0.family == AF_INET6) }
+            .map(\.name))
+    }
+
+    /// Reads all interface addresses in a single getifaddrs pass.
+    private static func activeInterfaceNames() -> Set<String> {
         var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return false }
+        guard getifaddrs(&ifaddr) == 0, let firstAddr = ifaddr else { return [] }
         defer { freeifaddrs(ifaddr) }
 
-        for ptr in sequence(first: firstAddr, next: { $0.pointee.ifa_next }) {
-            let name = String(cString: ptr.pointee.ifa_name)
-            if name == bsdName {
-                let flags = Int32(ptr.pointee.ifa_flags)
-                let isUp = (flags & IFF_UP) != 0
-                let isRunning = (flags & IFF_RUNNING) != 0
-                if isUp && isRunning && ptr.pointee.ifa_addr.pointee.sa_family == UInt8(AF_INET) {
-                    return true
-                }
-            }
+        let addresses = sequence(first: firstAddr, next: { $0.pointee.ifa_next }).compactMap { ptr -> InterfaceAddress? in
+            guard let address = ptr.pointee.ifa_addr else { return nil }
+            return InterfaceAddress(
+                name: String(cString: ptr.pointee.ifa_name),
+                flags: Int32(bitPattern: ptr.pointee.ifa_flags),
+                family: Int32(address.pointee.sa_family)
+            )
         }
-        return false
+        return activeInterfaceNames(from: addresses)
     }
 
     // MARK: - CLLocationManagerDelegate
