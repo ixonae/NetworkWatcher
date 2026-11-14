@@ -9,6 +9,10 @@ struct GeneralSettingsView: View {
     @State private var customURL: String = ""
     @State private var authToken: String = ""
     @State private var notificationsDenied = false
+    @State private var launchAtLoginEnabled = false
+    @State private var launchAtLoginNeedsApproval = false
+    @State private var launchAtLoginError: String?
+    private let launchAtLogin = LaunchAtLogin()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -95,10 +99,31 @@ struct GeneralSettingsView: View {
                 }
 
                 Section {
-                    Toggle("Launch at login", isOn: $settings.launchAtLogin)
-                        .onChange(of: settings.launchAtLogin) { _, newValue in
-                            updateLaunchAtLogin(newValue)
+                    Toggle("Launch at login", isOn: Binding(
+                        get: { launchAtLoginEnabled },
+                        set: { updateLaunchAtLogin($0) }
+                    ))
+
+                    if let launchAtLoginError {
+                        Text(launchAtLoginError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    } else if launchAtLoginNeedsApproval {
+                        HStack {
+                            Text("Waiting for approval in System Settings > Login Items.")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            Button("Open Login Items") {
+                                SMAppService.openSystemSettingsLoginItems()
+                            }
+                            .controlSize(.small)
                         }
+                    } else {
+                        Text("Applies immediately.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 } header: {
                     Text("System")
                 }
@@ -124,7 +149,7 @@ struct GeneralSettingsView: View {
         }
         .onAppear {
             settings = networkManager.settings
-            settings.launchAtLogin = SMAppService.mainApp.status == .enabled
+            refreshLaunchAtLogin()
             initURLSelection()
             authToken = KeychainService.load(key: "ipLookupAuthToken") ?? ""
         }
@@ -148,15 +173,12 @@ struct GeneralSettingsView: View {
     }
 
     private func updateLaunchAtLogin(_ enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            print("Failed to update launch at login: \(error)")
-            settings.launchAtLogin = !enabled
-        }
+        launchAtLoginError = launchAtLogin.setEnabled(enabled)
+        refreshLaunchAtLogin()
+    }
+
+    private func refreshLaunchAtLogin() {
+        launchAtLoginEnabled = launchAtLogin.isEnabled
+        launchAtLoginNeedsApproval = launchAtLogin.requiresApproval
     }
 }

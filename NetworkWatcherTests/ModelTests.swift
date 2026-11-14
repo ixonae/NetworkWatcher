@@ -81,7 +81,6 @@ final class ModelTests: XCTestCase {
         var settings = AppSettings()
         settings.checkIntervalSeconds = 30
         settings.showIPInMenuBar = true
-        settings.launchAtLogin = true
         settings.allowUnconfiguredNetworks = true
         settings.muteAlerts = true
         settings.ipLookupURL = "https://custom.example.com/ip"
@@ -91,7 +90,6 @@ final class ModelTests: XCTestCase {
 
         XCTAssertEqual(decoded.checkIntervalSeconds, 30)
         XCTAssertTrue(decoded.showIPInMenuBar)
-        XCTAssertTrue(decoded.launchAtLogin)
         XCTAssertTrue(decoded.allowUnconfiguredNetworks)
         XCTAssertTrue(decoded.muteAlerts)
         XCTAssertEqual(decoded.ipLookupURL, "https://custom.example.com/ip")
@@ -168,6 +166,15 @@ final class ModelTests: XCTestCase {
         XCTAssertFalse(decoded.muteAlerts)
     }
 
+    func testAppSettingsIgnoresLegacyLaunchAtLogin() throws {
+        let json = #"{"checkIntervalSeconds":30,"launchAtLogin":true,"muteAlerts":true}"#
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        XCTAssertEqual(decoded.checkIntervalSeconds, 30)
+        XCTAssertTrue(decoded.muteAlerts)
+        let reencoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(decoded)) as? [String: Any]
+        XCTAssertNil(reencoded?["launchAtLogin"])
+    }
+
     func testAppSettingsDecodesEmptyJSON() throws {
         let json = "{}"
         let data = json.data(using: .utf8)!
@@ -175,7 +182,6 @@ final class ModelTests: XCTestCase {
 
         XCTAssertEqual(decoded.checkIntervalSeconds, 60)
         XCTAssertFalse(decoded.showIPInMenuBar)
-        XCTAssertFalse(decoded.launchAtLogin)
         XCTAssertFalse(decoded.allowUnconfiguredNetworks)
         XCTAssertFalse(decoded.muteAlerts)
         XCTAssertEqual(decoded.ipLookupURL, "https://api.ipify.org?format=text")
@@ -198,7 +204,6 @@ final class ModelTests: XCTestCase {
         let settings = AppSettings()
         XCTAssertEqual(settings.checkIntervalSeconds, 60)
         XCTAssertFalse(settings.showIPInMenuBar)
-        XCTAssertFalse(settings.launchAtLogin)
         XCTAssertFalse(settings.allowUnconfiguredNetworks)
         XCTAssertFalse(settings.muteAlerts)
         XCTAssertEqual(settings.ipLookupURL, "https://api.ipify.org?format=text")

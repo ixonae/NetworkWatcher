@@ -188,7 +188,6 @@ final class NetworkManagerTests: XCTestCase {
         let settings = AppSettings()
         XCTAssertEqual(settings.checkIntervalSeconds, 60)
         XCTAssertFalse(settings.showIPInMenuBar)
-        XCTAssertFalse(settings.launchAtLogin)
         XCTAssertFalse(settings.allowUnconfiguredNetworks)
         XCTAssertFalse(settings.muteAlerts)
         XCTAssertEqual(settings.ipLookupURL, "https://api.ipify.org?format=text")

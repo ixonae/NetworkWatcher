@@ -24,7 +24,6 @@ struct AppSettings: Codable {
 
     var checkIntervalSeconds: Int = 60
     var showIPInMenuBar: Bool = false
-    var launchAtLogin: Bool = false
     var allowUnconfiguredNetworks: Bool = false
     var muteAlerts: Bool = false
     var ipLookupURL: String = "https://api.ipify.org?format=text"
@@ -45,7 +44,8 @@ struct AppSettings: Codable {
     ]
 
     enum CodingKeys: String, CodingKey {
-        case checkIntervalSeconds, showIPInMenuBar, launchAtLogin
+        // Old data may also contain "launchAtLogin"; it is ignored (SMAppService is the source of truth).
+        case checkIntervalSeconds, showIPInMenuBar
         case allowUnconfiguredNetworks, muteAlerts, ipLookupURL, alertStyle
     }
 
@@ -63,7 +63,6 @@ struct AppSettings: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         checkIntervalSeconds = Self.clampedInterval(try container.decodeIfPresent(Int.self, forKey: .checkIntervalSeconds) ?? 60)
         showIPInMenuBar = try container.decodeIfPresent(Bool.self, forKey: .showIPInMenuBar) ?? false
-        launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
         allowUnconfiguredNetworks = try container.decodeIfPresent(Bool.self, forKey: .allowUnconfiguredNetworks) ?? false
         muteAlerts = try container.decodeIfPresent(Bool.self, forKey: .muteAlerts) ?? false
         let storedURL = try container.decodeIfPresent(String.self, forKey: .ipLookupURL) ?? "https://api.ipify.org?format=text"
