@@ -12,8 +12,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let ipChecker = IPChecker()
     let networkMonitor = NetworkMonitor()
 
-    @Published var currentIP: String = "Checking..."
-    @Published var ipStatus: IPStatus = .unknown
+    var currentIP: String = "Checking..."
+    var ipStatus: IPStatus = .unknown
     private var mismatchAlertAcknowledged = false
     /// Network the current mismatch alert was shown for, so moving to another bad network alerts again.
     private var acknowledgedMismatchNetwork: String?

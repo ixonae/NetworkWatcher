@@ -148,14 +148,6 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
         return wifiClient.interface()?.ssid()
     }
 
-    func currentBSSID() -> String? {
-        return wifiClient.interface()?.bssid()
-    }
-
-    func wifiInterfaceName() -> String? {
-        return wifiClient.interface()?.interfaceName
-    }
-
     /// Returns all active network identifiers: WiFi SSID if connected, plus interface types like "Ethernet".
     func activeNetworkIdentifiers() -> [String] {
         var identifiers: [String] = []
@@ -178,11 +170,6 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
         }
 
         return identifiers
-    }
-
-    /// Returns the name of the first active interface (for disabling).
-    func primaryInterfaceName() -> String? {
-        return wifiInterfaceName() ?? activeInterfaces().first?.name
     }
 
     private func activeInterfaces() -> [NetworkInterface] {
