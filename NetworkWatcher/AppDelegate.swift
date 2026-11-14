@@ -277,7 +277,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func restartTimer(intervalSeconds: Int) {
         timer?.invalidate()
-        let interval = TimeInterval(max(intervalSeconds, 5))
+        let interval = TimeInterval(AppSettings.clampedInterval(intervalSeconds))
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { await self?.performIPCheck(trigger: .timer) }
         }

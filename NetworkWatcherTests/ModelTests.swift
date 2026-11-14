@@ -350,4 +350,45 @@ final class ModelTests: XCTestCase {
     func testAlertStyleLabels() {
         XCTAssertEqual(Set(AlertStyle.allCases.map(\.label)).count, AlertStyle.allCases.count)
     }
+
+    // MARK: - Check interval
+
+    private func decodeInterval(_ value: Int) throws -> Int {
+        let json = #"{"checkIntervalSeconds":\#(value)}"#
+        return try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8)).checkIntervalSeconds
+    }
+
+    func testIntervalRangeBounds() {
+        XCTAssertEqual(AppSettings.checkIntervalRange, 5...3600)
+        XCTAssertTrue(AppSettings.checkIntervalRange.contains(AppSettings().checkIntervalSeconds))
+    }
+
+    func testIsValidInterval() {
+        XCTAssertTrue(AppSettings.isValidInterval(5))
+        XCTAssertTrue(AppSettings.isValidInterval(60))
+        XCTAssertTrue(AppSettings.isValidInterval(3600))
+        XCTAssertFalse(AppSettings.isValidInterval(4))
+        XCTAssertFalse(AppSettings.isValidInterval(0))
+        XCTAssertFalse(AppSettings.isValidInterval(-1))
+        XCTAssertFalse(AppSettings.isValidInterval(3601))
+    }
+
+    func testClampedInterval() {
+        XCTAssertEqual(AppSettings.clampedInterval(0), 5)
+        XCTAssertEqual(AppSettings.clampedInterval(-10), 5)
+        XCTAssertEqual(AppSettings.clampedInterval(30), 30)
+        XCTAssertEqual(AppSettings.clampedInterval(99999), 3600)
+    }
+
+    func testOutOfRangeStoredIntervalsAreClampedOnDecode() throws {
+        XCTAssertEqual(try decodeInterval(0), 5)
+        XCTAssertEqual(try decodeInterval(-1), 5)
+        XCTAssertEqual(try decodeInterval(99999), 3600)
+    }
+
+    func testValidStoredIntervalsPassThrough() throws {
+        XCTAssertEqual(try decodeInterval(5), 5)
+        XCTAssertEqual(try decodeInterval(120), 120)
+        XCTAssertEqual(try decodeInterval(3600), 3600)
+    }
 }

@@ -19,6 +19,9 @@ enum AlertStyle: String, Codable, CaseIterable {
 }
 
 struct AppSettings: Codable {
+    /// Allowed check intervals, in seconds.
+    static let checkIntervalRange = 5...3600
+
     var checkIntervalSeconds: Int = 60
     var showIPInMenuBar: Bool = false
     var launchAtLogin: Bool = false
@@ -48,9 +51,17 @@ struct AppSettings: Codable {
 
     init() {}
 
+    static func isValidInterval(_ seconds: Int) -> Bool {
+        checkIntervalRange.contains(seconds)
+    }
+
+    static func clampedInterval(_ seconds: Int) -> Int {
+        min(max(seconds, checkIntervalRange.lowerBound), checkIntervalRange.upperBound)
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        checkIntervalSeconds = try container.decodeIfPresent(Int.self, forKey: .checkIntervalSeconds) ?? 60
+        checkIntervalSeconds = Self.clampedInterval(try container.decodeIfPresent(Int.self, forKey: .checkIntervalSeconds) ?? 60)
         showIPInMenuBar = try container.decodeIfPresent(Bool.self, forKey: .showIPInMenuBar) ?? false
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
         allowUnconfiguredNetworks = try container.decodeIfPresent(Bool.self, forKey: .allowUnconfiguredNetworks) ?? false

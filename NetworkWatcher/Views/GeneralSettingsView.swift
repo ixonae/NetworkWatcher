@@ -25,6 +25,12 @@ struct GeneralSettingsView: View {
                         }
                     }
 
+                    if !isIntervalValid {
+                        Text("Enter a value between \(AppSettings.checkIntervalRange.lowerBound) and \(AppSettings.checkIntervalRange.upperBound) seconds.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+
                     Picker("Lookup service", selection: $selectedURLOption) {
                         ForEach(AppSettings.predefinedURLs, id: \.name) { option in
                             Text(option.name).tag(option.name)
@@ -112,6 +118,7 @@ struct GeneralSettingsView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .controlSize(.large)
+                .disabled(!isIntervalValid)
             }
             .padding()
         }
@@ -125,6 +132,10 @@ struct GeneralSettingsView: View {
             let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
             notificationsDenied = status == .denied
         }
+    }
+
+    private var isIntervalValid: Bool {
+        AppSettings.isValidInterval(settings.checkIntervalSeconds)
     }
 
     private func initURLSelection() {
