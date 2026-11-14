@@ -1,6 +1,9 @@
 import Foundation
 
 class IPChecker {
+    /// Checks can run every few seconds, so a stalled request must not hang around for the 60s default.
+    static let requestTimeout: TimeInterval = 10
+
     private let session: URLSession
 
     init(session: URLSession = .shared) {
@@ -12,7 +15,7 @@ class IPChecker {
             throw IPCheckerError.invalidURL
         }
 
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: Self.requestTimeout)
         if let token = authToken, !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -24,12 +27,33 @@ class IPChecker {
             throw IPCheckerError.badResponse
         }
 
+        // A captive portal answers 200 with an HTML page, so only accept a single plain IP address.
         guard let ip = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !ip.isEmpty else {
+              IPValidator.isValidIPAddress(ip) else {
             throw IPCheckerError.invalidData
         }
 
         return ip
+    }
+
+    /// Short, user-facing reason for a failed lookup, suitable for the menu.
+    static func failureReason(for error: Error) -> String {
+        if let error = error as? IPCheckerError {
+            switch error {
+            case .invalidURL: return "invalid lookup URL"
+            case .badResponse: return "lookup service error"
+            case .invalidData: return "no valid IP in response"
+            }
+        }
+        if let error = error as? URLError {
+            switch error.code {
+            case .timedOut: return "lookup timed out"
+            case .notConnectedToInternet, .networkConnectionLost: return "offline"
+            case .cannotFindHost, .dnsLookupFailed: return "lookup host not found"
+            default: break
+            }
+        }
+        return "lookup failed"
     }
 }
 

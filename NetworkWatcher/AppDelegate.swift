@@ -15,8 +15,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var currentIP: String = "Checking..."
     var ipStatus: IPStatus = .unknown
     private var alertState = AlertState()
-    /// Incremented per check so a slower, older check can't overwrite a newer result.
-    private var checkGeneration = 0
+    /// Orders checks so a slower, older check can't overwrite a newer result.
+    private var checkCoordinator = CheckCoordinator()
+    /// Why the last check failed, shown in the menu; nil after a successful check.
+    private var lastFailureReason: String?
     private var lastCheckTime: Date?
 
     func applicationDidFinishLaunching(_: Notification) {
@@ -134,7 +136,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let menu = statusItem.menu else { return }
 
         if let ipItem = menu.item(withTag: 100) {
-            ipItem.title = "IP: \(currentIP)"
+            if let reason = lastFailureReason {
+                ipItem.title = "IP: \(currentIP) (\(reason))"
+            } else {
+                ipItem.title = "IP: \(currentIP)"
+            }
         }
 
         if let lastCheckItem = menu.item(withTag: 102) {
@@ -217,20 +223,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         timer?.invalidate()
         let interval = TimeInterval(max(networkManager.settings.checkIntervalSeconds, 5))
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { await self?.performIPCheck() }
+            Task { await self?.performIPCheck(trigger: .timer) }
         }
     }
 
     @MainActor
-    func performIPCheck() async {
-        checkGeneration += 1
-        let generation = checkGeneration
+    func performIPCheck(trigger: CheckCoordinator.Trigger = .immediate) async {
+        guard let generation = checkCoordinator.begin(trigger) else { return }
+        defer { checkCoordinator.finish(generation) }
 
         do {
             let authToken = KeychainService.load(key: "ipLookupAuthToken")
             let ip = try await ipChecker.fetchExternalIP(from: networkManager.settings.ipLookupURL, authToken: authToken)
-            guard generation == checkGeneration else { return }
+            guard checkCoordinator.isCurrent(generation) else { return }
             currentIP = ip
+            lastFailureReason = nil
             lastCheckTime = Date()
 
             let evaluator = StatusEvaluator(
@@ -251,12 +258,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             refreshMenu()
 
             if let alert = evaluation.alert {
+                // Finish first: the modal alert blocks until dismissed and periodic checks should continue.
+                checkCoordinator.finish(generation)
                 present(alert)
             }
 
         } catch {
-            guard generation == checkGeneration else { return }
-            currentIP = "Error"
+            guard checkCoordinator.isCurrent(generation) else { return }
+            currentIP = "Unavailable"
+            lastFailureReason = IPChecker.failureReason(for: error)
+            lastCheckTime = Date()
             ipStatus = .unknown
             updateStatusIcon()
             refreshMenu()
