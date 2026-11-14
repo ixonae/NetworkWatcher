@@ -14,20 +14,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     var currentIP: String = "Checking..."
     var ipStatus: IPStatus = .unknown
-    private var mismatchAlertAcknowledged = false
-    /// Network the current mismatch alert was shown for, so moving to another bad network alerts again.
-    private var acknowledgedMismatchNetwork: String?
+    private var alertState = AlertState()
     /// Incremented per check so a slower, older check can't overwrite a newer result.
     private var checkGeneration = 0
     private var lastCheckTime: Date?
-
-    enum IPStatus {
-        case match
-        case matchVPN
-        case mismatch
-        case unknown
-        case noNetwork
-    }
 
     func applicationDidFinishLaunching(_: Notification) {
         networkMonitor.requestLocationPermission()
@@ -243,69 +233,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             currentIP = ip
             lastCheckTime = Date()
 
-            let activeIdentifiers = networkMonitor.activeNetworkIdentifiers()
-
-            // Find the first configured network that matches an active connection
-            var matchedNetwork: NetworkEntry?
-            for identifier in activeIdentifiers {
-                if let network = networkManager.networkForSSID(identifier) {
-                    matchedNetwork = network
-                    break
-                }
-            }
-
-            let isUnconfigured = matchedNetwork == nil || matchedNetwork!.allowedIPRanges.isEmpty
-            let networkName = matchedNetwork?.networkIdentifier
-                ?? activeIdentifiers.first
-                ?? "Unknown"
-            let isMuted = networkManager.settings.muteAlerts
-
-            if isUnconfigured {
-                if networkManager.settings.allowUnconfiguredNetworks {
-                    let wasInMismatch = mismatchAlertAcknowledged
-                    ipStatus = .match
-                    mismatchAlertAcknowledged = false
-                    if wasInMismatch && !isMuted {
-                        showRestoredAlert(ip: ip, networkName: networkName)
-                    }
-                } else {
-                    ipStatus = .mismatch
-
-                    if !mismatchAlertAcknowledged || acknowledgedMismatchNetwork != networkName {
-                        // Mark acknowledged before the modal alert: checks can run while it is open.
-                        mismatchAlertAcknowledged = true
-                        acknowledgedMismatchNetwork = networkName
-                        if !isMuted {
-                            showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
-                        }
-                    }
-
-                }
-            } else {
-                let result = IPValidator.validate(ip: ip, against: matchedNetwork!.allowedIPRanges)
-                if result.matched {
-                    let wasInMismatch = mismatchAlertAcknowledged
-                    ipStatus = result.isVPN ? .matchVPN : .match
-                    mismatchAlertAcknowledged = false
-                    if wasInMismatch && !isMuted {
-                        showRestoredAlert(ip: ip, networkName: networkName)
-                    }
-                } else {
-                    ipStatus = .mismatch
-
-                    if !mismatchAlertAcknowledged || acknowledgedMismatchNetwork != networkName {
-                        // Mark acknowledged before the modal alert: checks can run while it is open.
-                        mismatchAlertAcknowledged = true
-                        acknowledgedMismatchNetwork = networkName
-                        if !isMuted {
-                            showMismatchAlert(ip: ip, network: matchedNetwork!)
-                        }
-                    }
-                }
-            }
+            let evaluator = StatusEvaluator(
+                networks: networkManager.networks,
+                allowUnconfiguredNetworks: networkManager.settings.allowUnconfiguredNetworks,
+                muteAlerts: networkManager.settings.muteAlerts
+            )
+            let evaluation = evaluator.evaluate(
+                ip: ip,
+                activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
+                alertState: alertState
+            )
+            ipStatus = evaluation.status
+            // Store state before presenting a modal alert: checks can run while it is open.
+            alertState = evaluation.alertState
 
             updateStatusIcon()
             refreshMenu()
+
+            if let alert = evaluation.alert {
+                present(alert)
+            }
 
         } catch {
             guard generation == checkGeneration else { return }
@@ -316,12 +263,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func showMismatchAlert(ip: String, network: NetworkEntry) {
+    private func present(_ alert: StatusAlert) {
+        switch alert {
+        case let .mismatch(ip, networkName):
+            showMismatchAlert(ip: ip, networkName: networkName)
+        case let .unconfigured(ip, networkName):
+            showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
+        case let .restored(ip, networkName):
+            showRestoredAlert(ip: ip, networkName: networkName)
+        }
+    }
+
+    private func showMismatchAlert(ip: String, networkName: String) {
         NSApp.activate(ignoringOtherApps: true)
 
         let alert = NSAlert()
         alert.messageText = "IP Address Mismatch"
-        alert.informativeText = "Your current external IP (\(ip)) does not match the expected IP range for network \"\(network.networkIdentifier)\".\n\nIf this is unexpected, check that the allowed IP list for this network is correct in Settings."
+        alert.informativeText = "Your current external IP (\(ip)) does not match the expected IP range for network \"\(networkName)\".\n\nIf this is unexpected, check that the allowed IP list for this network is correct in Settings."
         alert.alertStyle = .critical
         alert.addButton(withTitle: "OK")
         alert.runModal()

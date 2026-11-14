@@ -35,10 +35,24 @@ class NetworkManager: ObservableObject {
     }
 
     func networkForSSID(_ ssid: String) -> NetworkEntry? {
+        Self.network(forIdentifier: ssid, in: networks)
+    }
+
+    static func network(forIdentifier identifier: String, in networks: [NetworkEntry]) -> NetworkEntry? {
         // Try exact match first, then fall back to catch-all "*"
         return networks.first(where: {
-            $0.networkIdentifier.lowercased() == ssid.lowercased()
+            $0.networkIdentifier.lowercased() == identifier.lowercased()
         }) ?? networks.first(where: { $0.networkIdentifier == "*" })
+    }
+
+    /// The configured network for the first active identifier that has one.
+    static func network(forActiveIdentifiers identifiers: [String], in networks: [NetworkEntry]) -> NetworkEntry? {
+        for identifier in identifiers {
+            if let network = network(forIdentifier: identifier, in: networks) {
+                return network
+            }
+        }
+        return nil
     }
 
     // MARK: - Settings
