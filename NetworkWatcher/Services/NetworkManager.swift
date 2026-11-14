@@ -7,6 +7,7 @@ class NetworkManager: ObservableObject {
 
     private let networksKey = "savedNetworks"
     private let settingsKey = "appSettings"
+    private let presetMigrationKey = "lookupPresetMigrationDone"
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -91,6 +92,17 @@ class NetworkManager: ObservableObject {
            let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
             settings = decoded
         }
+        migrateLegacyLookupPreset()
     }
 
+    /// Moves a former dual-stack preset to its IPv4-only replacement, once. Skipped when an auth
+    /// token is saved: the token was meant for the old host and must not be sent to a new one.
+    private func migrateLegacyLookupPreset() {
+        guard !defaults.bool(forKey: presetMigrationKey) else { return }
+        defaults.set(true, forKey: presetMigrationKey)
+        guard let replacement = AppSettings.migratedLookupURL(for: settings.ipLookupURL),
+              KeychainService.load(key: "ipLookupAuthToken")?.isEmpty ?? true else { return }
+        settings.ipLookupURL = replacement
+        saveSettings()
+    }
 }

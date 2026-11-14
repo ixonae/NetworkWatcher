@@ -231,11 +231,11 @@ final class ModelTests: XCTestCase {
     }
 
     func testLegacyIcanhazipPresetMigrates() throws {
-        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://icanhazip.com").ipLookupURL, "https://ipv4.icanhazip.com")
+        XCTAssertEqual(AppSettings.migratedLookupURL(for: "https://icanhazip.com"), "https://ipv4.icanhazip.com")
     }
 
     func testLegacyIfconfigPresetMigrates() throws {
-        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ifconfig.me/ip").ipLookupURL, "https://4.ident.me")
+        XCTAssertEqual(AppSettings.migratedLookupURL(for: "https://ifconfig.me/ip"), "https://4.ident.me")
     }
 
     func testLegacyMigrationsTargetCurrentPresets() {
@@ -248,7 +248,9 @@ final class ModelTests: XCTestCase {
     func testCurrentPresetsAndCustomURLsAreNotMigrated() throws {
         for preset in AppSettings.predefinedURLs {
             XCTAssertEqual(try decodeSettings(ipLookupURL: preset.url).ipLookupURL, preset.url)
+            XCTAssertNil(AppSettings.migratedLookupURL(for: preset.url))
         }
+        XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ifconfig.me/ip").ipLookupURL, "https://ifconfig.me/ip")
         XCTAssertEqual(try decodeSettings(ipLookupURL: "https://icanhazip.com/custom").ipLookupURL, "https://icanhazip.com/custom")
         XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ip.example.com").ipLookupURL, "https://ip.example.com")
     }

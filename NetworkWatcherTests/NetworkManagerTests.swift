@@ -18,6 +18,18 @@ final class NetworkManagerTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Lookup preset migration
+
+    func testLegacyURLChosenAfterMigrationSurvivesRelaunch() {
+        // The first launch (setUp) already ran the one-time migration.
+        var settings = manager.settings
+        settings.ipLookupURL = "https://ifconfig.me/ip"
+        manager.updateSettings(settings)
+
+        let reloaded = NetworkManager(defaults: testDefaults)
+        XCTAssertEqual(reloaded.settings.ipLookupURL, "https://ifconfig.me/ip")
+    }
+
     // MARK: - Network CRUD
 
     func testAddNetwork() {
