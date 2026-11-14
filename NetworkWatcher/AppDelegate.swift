@@ -26,8 +26,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         formatter.timeStyle = .medium
         return formatter
     }()
-    /// Last IP the lookup returned, so rule changes can be re-evaluated without a new request.
-    private var lastFetchedIP: String?
+    /// What the last successful lookup saw, so rule changes can be re-evaluated without a new request.
+    /// The network state is captured before the request: the IP belongs to the network it was fetched on.
+    private struct LookupResult {
+        let ip: String
+        let activeIdentifiers: [String]
+        let ssidBlockedByPermission: Bool
+    }
+    private var lastLookup: LookupResult?
     /// Settings the timer and status were last configured from, to tell what a change affects.
     private var appliedSettings: AppSettings?
 
@@ -80,16 +86,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// No alert is shown for a change the user just made, but the alert state is updated so the
     /// next periodic check doesn't raise one about it either.
     private func reevaluateStatus(networks: [NetworkEntry]? = nil, settings: AppSettings? = nil) {
-        guard let ip = lastFetchedIP else { return }
+        guard let lookup = lastLookup else { return }
         let evaluator = StatusEvaluator(
             networks: networks ?? networkManager.networks,
             settings: settings ?? networkManager.settings
         )
         let evaluation = evaluator.evaluate(
-            ip: ip,
-            activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
+            ip: lookup.ip,
+            activeIdentifiers: lookup.activeIdentifiers,
             alertState: alertState,
-            ssidBlockedByPermission: networkMonitor.isSSIDBlockedByPermission
+            ssidBlockedByPermission: lookup.ssidBlockedByPermission
         )
         ipStatus = evaluation.status
         alertState = evaluation.alertState
@@ -293,19 +299,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             let authToken = KeychainService.load(key: "ipLookupAuthToken")
+            let activeIdentifiers = networkMonitor.activeNetworkIdentifiers()
+            let ssidBlocked = networkMonitor.isSSIDBlockedByPermission
             let ip = try await ipChecker.fetchExternalIP(from: networkManager.settings.ipLookupURL, authToken: authToken)
             guard checkCoordinator.isCurrent(generation) else { return }
             currentIP = ip
-            lastFetchedIP = ip
+            lastLookup = LookupResult(ip: ip, activeIdentifiers: activeIdentifiers, ssidBlockedByPermission: ssidBlocked)
             lastFailureReason = nil
             lastCheckTime = Date()
 
             let evaluator = StatusEvaluator(networks: networkManager.networks, settings: networkManager.settings)
             let evaluation = evaluator.evaluate(
                 ip: ip,
-                activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
+                activeIdentifiers: activeIdentifiers,
                 alertState: alertState,
-                ssidBlockedByPermission: networkMonitor.isSSIDBlockedByPermission
+                ssidBlockedByPermission: ssidBlocked
             )
             ipStatus = evaluation.status
             // Store state before presenting a modal alert: checks can run while it is open.
@@ -323,6 +331,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } catch {
             guard checkCoordinator.isCurrent(generation) else { return }
             currentIP = "Unavailable"
+            // Rule edits must not bring back a status from before the failure.
+            lastLookup = nil
             lastFailureReason = IPChecker.failureReason(for: error)
             Log.network.error("IP lookup failed: \(error.localizedDescription, privacy: .public)")
             lastCheckTime = Date()
