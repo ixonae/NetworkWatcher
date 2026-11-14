@@ -10,14 +10,19 @@ concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Unit Tests
     runs-on: macos-26
+    env:
+      SONAR_ENABLED: ${{ secrets.SONAR_TOKEN != '' }}
+    outputs:
+      sonar-enabled: ${{ env.SONAR_ENABLED }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
@@ -27,10 +32,56 @@ jobs:
           xcodebuild test \
             -scheme NetworkWatcher \
             -destination 'platform=macOS,arch=arm64' \
-            -resultBundlePath TestResults \
+            -resultBundlePath "$RUNNER_TEMP/TestResults.xcresult" \
             -enableCodeCoverage YES \
             -test-timeouts-enabled YES \
             -maximum-test-execution-time-allowance 60 \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_ALLOWED=NO | xcpretty --color && exit ${PIPESTATUS[0]}
         timeout-minutes: 10
+
+      - name: Convert Xcode coverage for SonarQube
+        if: ${{ env.SONAR_ENABLED == 'true' }}
+        shell: bash
+        run: |
+          xcrun xccov view --archive --json "$RUNNER_TEMP/TestResults.xcresult" |
+            python3 scripts/sonar-coverage.py > sonar-coverage.xml
+
+      - name: Upload coverage for SonarQube
+        if: ${{ env.SONAR_ENABLED == 'true' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sonar-coverage
+          path: sonar-coverage.xml
+          if-no-files-found: error
+          retention-days: 1
+
+  sonar:
+    name: SonarQube Scan
+    needs: test
+    if: ${{ needs.test.outputs.sonar-enabled == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sonar-coverage
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.sonar/cache
+          # Scanner version is tied to the scan action; bump with it so stale packages are dropped.
+          key: ${{ runner.os }}-${{ runner.arch }}-sonar-v8.4.0
+          restore-keys: ${{ runner.os }}-${{ runner.arch }}-sonar-
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
+        with:
+          args: -Dproject.settings=.sonarcloud.properties
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

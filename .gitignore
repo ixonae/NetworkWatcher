@@ -15,3 +15,7 @@ Packages/
 # Other
 *.swp
 *~
+
+# SonarQube CI artifacts
+sonar-coverage.xml
+.scannerwork/
