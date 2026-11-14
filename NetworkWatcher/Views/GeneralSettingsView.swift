@@ -5,6 +5,8 @@ import UserNotifications
 struct GeneralSettingsView: View {
     @ObservedObject var networkManager: NetworkManager
     @State private var settings: AppSettings = AppSettings()
+    /// Edited as text: a number-formatted field keeps the previous value when the text is invalid.
+    @State private var intervalText: String = ""
     @State private var selectedURLOption: String = AppSettings.predefinedURLs[0].name
     @State private var customURL: String = ""
     @State private var authToken: String = ""
@@ -20,7 +22,7 @@ struct GeneralSettingsView: View {
                 Section {
                     LabeledContent("Check every") {
                         HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            TextField("", value: $settings.checkIntervalSeconds, format: .number)
+                            TextField("", text: $intervalText)
                                 .labelsHidden()
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 60)
@@ -133,6 +135,9 @@ struct GeneralSettingsView: View {
             HStack {
                 Spacer()
                 Button("Save") {
+                    if let interval = parsedInterval {
+                        settings.checkIntervalSeconds = interval
+                    }
                     networkManager.updateSettings(settings)
                     let trimmedToken = authToken.trimmingCharacters(in: .whitespaces)
                     if trimmedToken.isEmpty {
@@ -149,9 +154,19 @@ struct GeneralSettingsView: View {
         }
         .onAppear {
             settings = networkManager.settings
+            intervalText = String(settings.checkIntervalSeconds)
             refreshLaunchAtLogin()
             initURLSelection()
             authToken = KeychainService.load(key: "ipLookupAuthToken") ?? ""
+        }
+        // The menu bar toggles these too; keep this copy current so Save doesn't revert them.
+        .onReceive(networkManager.$settings) { updated in
+            settings.showIPInMenuBar = updated.showIPInMenuBar
+            settings.muteAlerts = updated.muteAlerts
+        }
+        // Approval happens in System Settings, so re-read the status on coming back.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshLaunchAtLogin()
         }
         .task {
             let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
@@ -159,8 +174,12 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private var parsedInterval: Int? {
+        Int(intervalText.trimmingCharacters(in: .whitespaces))
+    }
+
     private var isIntervalValid: Bool {
-        AppSettings.isValidInterval(settings.checkIntervalSeconds)
+        parsedInterval.map(AppSettings.isValidInterval) ?? false
     }
 
     private func initURLSelection() {
