@@ -315,4 +315,11 @@ final class IPValidatorTests: XCTestCase {
         XCTAssertEqual(IPValidator.parse(TestIP.v6Loopback)?.bytes, Array(repeating: 0, count: 15) + [1])
         XCTAssertEqual(IPValidator.parse(TestIP.v6Mapped)?.isIPv6, true)
     }
+
+    func testSignedNumbersAreRejected() {
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("10.0.0.0/-0"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("10.0.0.0/+8"))
+        XCTAssertFalse(IPValidator.isValidIPAddress("+1.2.3.4"))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: "192.168.1.1", cidr: "10.0.0.0/-0"))
+    }
 }

@@ -36,6 +36,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var lastLookup: LookupResult?
     /// Settings the timer and status were last configured from, to tell what a change affects.
     private var appliedSettings: AppSettings?
+    /// The settings in effect. `@Published` emits before it stores, so inside the settings sink
+    /// `networkManager.settings` is still the old value; this is already the new one.
+    private var currentSettings: AppSettings { appliedSettings ?? networkManager.settings }
 
     private let modalPresenter = ModalAlertPresenter()
     private lazy var notificationPresenter = NotificationAlertPresenter { [weak self] in self?.openSettings() }
@@ -89,18 +92,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let lookup = lastLookup else { return }
         let evaluator = StatusEvaluator(
             networks: networks ?? networkManager.networks,
-            settings: settings ?? networkManager.settings
+            settings: settings ?? currentSettings
         )
+        let previousState = alertState
         let evaluation = evaluator.evaluate(
             ip: lookup.ip,
             activeIdentifiers: lookup.activeIdentifiers,
-            alertState: alertState,
+            alertState: previousState,
             ssidBlockedByPermission: lookup.ssidBlockedByPermission
         )
         ipStatus = evaluation.status
         alertState = evaluation.alertState
+        // A mismatch the user never saw an alert for must not later be announced as restored.
+        if evaluation.alert != nil, case .mismatch = evaluation.status {
+            alertState.mismatchPresented = previousState.mismatchPresented
+        }
         updateStatusIcon()
         refreshMenu()
+
+        withdrawResolvedMismatch(previous: previousState, status: evaluation.status)
 
         // Other alerts are not shown for a change the user just made, but this one is not about
         // that change; its state is already marked shown, so it would otherwise never appear.
@@ -131,8 +141,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             symbolName = "xmark.circle"
         case .unknown:
             symbolName = "questionmark.circle"
-        case .noNetwork:
-            symbolName = "minus.circle"
         }
 
         let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
@@ -148,7 +156,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateMenuBarIPDisplay(showIP: Bool? = nil) {
         guard let button = statusItem.button else { return }
-        if showIP ?? networkManager.settings.showIPInMenuBar {
+        if showIP ?? currentSettings.showIPInMenuBar {
             button.title = " \(currentIP)"
         } else {
             button.title = ""
@@ -208,7 +216,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
     }
 
-    private func refreshMenu() {
+    private func refreshMenu(ssidBlocked: Bool? = nil) {
         guard let menu = statusItem.menu else { return }
 
         if let ipItem = menu.item(withTag: 100) {
@@ -228,15 +236,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if let showIPItem = menu.item(withTag: 101) {
-            showIPItem.state = networkManager.settings.showIPInMenuBar ? .on : .off
+            showIPItem.state = currentSettings.showIPInMenuBar ? .on : .off
         }
 
         if let locationItem = menu.item(withTag: 104) {
-            locationItem.isHidden = !networkMonitor.isSSIDBlockedByPermission
+            locationItem.isHidden = !(ssidBlocked ?? networkMonitor.isSSIDBlockedByPermission)
         }
 
         if let muteAlertsItem = menu.item(withTag: 103) {
-            muteAlertsItem.state = networkManager.settings.muteAlerts ? .on : .off
+            muteAlertsItem.state = currentSettings.muteAlerts ? .on : .off
         }
     }
 
@@ -315,6 +323,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             lastCheckTime = Date()
 
             let evaluator = StatusEvaluator(networks: networkManager.networks, settings: networkManager.settings)
+            let previousAlertState = alertState
             let evaluation = evaluator.evaluate(
                 ip: ip,
                 activeIdentifiers: activeIdentifiers,
@@ -326,11 +335,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alertState = evaluation.alertState
 
             updateStatusIcon()
-            refreshMenu()
+            refreshMenu(ssidBlocked: ssidBlocked)
+            withdrawResolvedMismatch(previous: previousAlertState, status: evaluation.status)
 
             if let alert = evaluation.alert {
-                // Finish first: the modal alert blocks until dismissed and periodic checks should continue.
-                checkCoordinator.finish(generation)
                 present(alert)
             }
 
@@ -367,6 +375,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             case .notification: notificationPresenter.present(content)
             case .popup: modalPresenter.present(content)
             }
+        }
+    }
+
+    /// Clears the notification of a mismatch the user was alerted about once the status is a match
+    /// again, even when no recovery alert is shown (muted, or the edit was the user's own).
+    /// Queued behind pending alerts so one still waiting on notification settings can't post afterwards.
+    private func withdrawResolvedMismatch(previous: AlertState, status: IPStatus) {
+        guard previous.mismatchPresented, status == .match || status == .matchVPN else { return }
+        let previousTask = alertTask
+        alertTask = Task { @MainActor in
+            await previousTask?.value
+            notificationPresenter.withdraw([AlertContent.mismatchID, AlertContent.unconfiguredID])
         }
     }
 

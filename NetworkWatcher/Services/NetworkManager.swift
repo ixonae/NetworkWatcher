@@ -88,9 +88,15 @@ class NetworkManager: ObservableObject {
     /// token is saved: the token was meant for the old host and must not be sent to a new one.
     private func migrateLegacyLookupPreset() {
         guard !defaults.bool(forKey: presetMigrationKey) else { return }
+        guard let replacement = AppSettings.migratedLookupURL(for: settings.ipLookupURL) else {
+            defaults.set(true, forKey: presetMigrationKey)
+            return
+        }
+        // An unreadable Keychain is not "no token": retry on the next launch instead of risking
+        // sending a token saved for the old host to the new one.
+        guard let hasToken = KeychainService.contains(key: "ipLookupAuthToken") else { return }
         defaults.set(true, forKey: presetMigrationKey)
-        guard let replacement = AppSettings.migratedLookupURL(for: settings.ipLookupURL),
-              KeychainService.load(key: "ipLookupAuthToken")?.isEmpty ?? true else { return }
+        guard !hasToken else { return }
         settings.ipLookupURL = replacement
         saveSettings()
     }

@@ -51,10 +51,11 @@ final class NotificationAlertPresenter: NSObject, AlertPresenter, UNUserNotifica
         return status == .authorized || status == .provisional
     }
 
-    /// Removes delivered notifications that a newer alert has made obsolete.
+    /// Removes delivered and pending notifications that a newer alert has made obsolete.
     func withdraw(_ identifiers: [String]) {
         guard !identifiers.isEmpty else { return }
         center.removeDeliveredNotifications(withIdentifiers: identifiers)
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
     }
 
     func present(_ content: AlertContent) {

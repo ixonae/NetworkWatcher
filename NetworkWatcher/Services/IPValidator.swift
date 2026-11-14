@@ -79,7 +79,7 @@ struct IPValidator {
 
         var result: UInt32 = 0
         for octet in octets {
-            guard let value = UInt8(octet) else { return nil }
+            guard isDigits(octet), let value = UInt8(octet) else { return nil }
             result = (result << 8) | UInt32(value)
         }
         return result
@@ -101,9 +101,15 @@ struct IPValidator {
         }
     }
 
+    /// Int()/UInt8() also accept a leading "+" or "-", which is never valid in an address or prefix.
+    private static func isDigits(_ text: Substring) -> Bool {
+        !text.isEmpty && text.allSatisfy { $0.isASCII && $0.isNumber }
+    }
+
     private static func parseCIDR(_ cidr: String) -> (ParsedIP, Int)? {
         let parts = cidr.trimmingCharacters(in: .whitespaces).split(separator: "/", omittingEmptySubsequences: false)
         guard parts.count == 2,
+              isDigits(parts[1]),
               let prefixLength = Int(parts[1]),
               let network = parse(String(parts[0])),
               (0...network.bitCount).contains(prefixLength) else {

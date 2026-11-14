@@ -318,4 +318,13 @@ final class StatusEvaluatorTests: XCTestCase {
         let after = evaluator(allowUnconfigured: true).evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: before.alertState)
         XCTAssertEqual(after.status, .match)
     }
+
+    func testChangeBetweenUnconfiguredAndMismatchOnSameNetworkAlertsAgain() {
+        let first = evaluator(networks: [NetworkEntry(networkIdentifier: "HomeWiFi")])
+            .evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
+        XCTAssertEqual(first.alert, .unconfigured(ip: TestIP.dns, networkName: "HomeWiFi"))
+
+        let second = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: first.alertState)
+        XCTAssertEqual(second.alert, .mismatch(ip: TestIP.dns, networkName: "HomeWiFi"))
+    }
 }

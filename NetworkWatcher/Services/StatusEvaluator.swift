@@ -5,7 +5,6 @@ enum IPStatus: Equatable {
     case matchVPN
     case mismatch
     case unknown
-    case noNetwork
 }
 
 /// Tracks whether the user has already been alerted about the current mismatch.
@@ -18,6 +17,9 @@ struct AlertState: Equatable {
     var mismatchPresented = false
     /// Whether the user was told that location permission is needed to read the Wi-Fi name.
     var locationAlertShown = false
+    /// Whether the acknowledged alert was the "unconfigured" kind, so a change between
+    /// unconfigured and mismatch on the same network is announced.
+    var acknowledgedUnconfigured = false
 }
 
 enum StatusAlert: Equatable {
@@ -111,7 +113,11 @@ struct StatusEvaluator {
     }
 
     private func mismatched(_ alert: StatusAlert, networkName: String, alertState: AlertState) -> StatusEvaluation {
-        let alreadyAlerted = alertState.mismatchAcknowledged && alertState.acknowledgedNetwork == networkName
+        let isUnconfigured: Bool
+        if case .unconfigured = alert { isUnconfigured = true } else { isUnconfigured = false }
+        let alreadyAlerted = alertState.mismatchAcknowledged
+            && alertState.acknowledgedNetwork == networkName
+            && alertState.acknowledgedUnconfigured == isUnconfigured
         guard !alreadyAlerted else {
             return StatusEvaluation(status: .mismatch, alert: nil, alertState: alertState)
         }
@@ -119,6 +125,7 @@ struct StatusEvaluator {
         var newState = alertState
         newState.mismatchAcknowledged = true
         newState.acknowledgedNetwork = networkName
+        newState.acknowledgedUnconfigured = isUnconfigured
         newState.mismatchPresented = !muteAlerts
         return StatusEvaluation(status: .mismatch, alert: muteAlerts ? nil : alert, alertState: newState)
     }

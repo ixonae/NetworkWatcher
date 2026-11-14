@@ -167,11 +167,9 @@ struct GeneralSettingsView: View {
         // Approval happens in System Settings, so re-read the status on coming back.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refreshLaunchAtLogin()
+            Task { await refreshNotificationStatus() }
         }
-        .task {
-            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
-            notificationsDenied = status == .denied
-        }
+        .task { await refreshNotificationStatus() }
     }
 
     private var parsedInterval: Int? {
@@ -197,6 +195,11 @@ struct GeneralSettingsView: View {
             Log.settings.error("\(launchAtLoginError, privacy: .public)")
         }
         refreshLaunchAtLogin()
+    }
+
+    private func refreshNotificationStatus() async {
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        notificationsDenied = status == .denied
     }
 
     private func refreshLaunchAtLogin() {

@@ -42,6 +42,22 @@ struct KeychainService {
         return String(data: data, encoding: .utf8)
     }
 
+    /// Whether an item exists: nil when the Keychain can't be queried (locked, access error),
+    /// so callers can tell "no item" apart from "couldn't look".
+    static func contains(key: String) -> Bool? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        switch SecItemCopyMatching(query as CFDictionary, nil) {
+        case errSecSuccess: return true
+        case errSecItemNotFound: return false
+        default: return nil
+        }
+    }
+
     @discardableResult
     static func delete(key: String) -> Bool {
         let query: [String: Any] = [
