@@ -4,7 +4,7 @@ import ServiceManagement
 struct GeneralSettingsView: View {
     @ObservedObject var networkManager: NetworkManager
     @State private var settings: AppSettings = AppSettings()
-    @State private var selectedURLOption: String = "ipify"
+    @State private var selectedURLOption: String = AppSettings.predefinedURLs[0].name
     @State private var customURL: String = ""
     @State private var authToken: String = ""
 

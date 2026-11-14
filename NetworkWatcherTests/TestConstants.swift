@@ -32,5 +32,19 @@ enum TestIP { // NOSONAR
     static let cidrAll = "0.0.0.0/0" // NOSONAR
     static let cidrHost = "1.2.3.4/32" // NOSONAR
     static let cidrHostSingle = "10.0.0.1/32" // NOSONAR
+
+    // IPv6 (2001:db8::/32 is the documentation range)
+    static let v6 = "2001:db8:1:2::10" // NOSONAR
+    static let v6Expanded = "2001:0DB8:0001:0002:0000:0000:0000:0010" // NOSONAR
+    static let v6SameSubnet = "2001:db8:1:2::ffff" // NOSONAR
+    static let v6OtherSubnet = "2001:db8:1:3::10" // NOSONAR
+    static let v6Outside = "2001:db9::1" // NOSONAR
+    static let v6Loopback = "::1" // NOSONAR
+    static let v6Mapped = "::ffff:1.2.3.4" // NOSONAR
+    static let cidrV6_32 = "2001:db8::/32" // NOSONAR
+    static let cidrV6_48 = "2001:db8:1::/48" // NOSONAR
+    static let cidrV6_64 = "2001:db8:1:2::/64" // NOSONAR
+    static let cidrV6Host = "2001:db8:1:2::10/128" // NOSONAR
+    static let cidrV6All = "::/0" // NOSONAR
 }
 // swiftlint:enable type_body_length

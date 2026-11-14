@@ -42,6 +42,9 @@
 		C10000002 /* StatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000001 /* StatusEvaluator.swift */; };
 		C10000003 /* StatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000001 /* StatusEvaluator.swift */; };
 		C10000005 /* StatusEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000004 /* StatusEvaluatorTests.swift */; };
+		C10000007 /* CheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000006 /* CheckCoordinator.swift */; };
+		C10000008 /* CheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000006 /* CheckCoordinator.swift */; };
+		C1000000A /* CheckCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000009 /* CheckCoordinatorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +93,8 @@
 		B10000019 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
 		C10000001 /* StatusEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEvaluator.swift; sourceTree = "<group>"; };
 		C10000004 /* StatusEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEvaluatorTests.swift; sourceTree = "<group>"; };
+		C10000006 /* CheckCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckCoordinator.swift; sourceTree = "<group>"; };
+		C10000009 /* CheckCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckCoordinatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -176,6 +181,7 @@
 		A10000044 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C10000006 /* CheckCoordinator.swift */,
 				C10000001 /* StatusEvaluator.swift */,
 				A10000015 /* IPChecker.swift */,
 				A10000016 /* NetworkMonitor.swift */,
@@ -202,6 +208,7 @@
 		B10000040 /* NetworkWatcherTests */ = {
 			isa = PBXGroup;
 			children = (
+				C10000009 /* CheckCoordinatorTests.swift */,
 				C10000004 /* StatusEvaluatorTests.swift */,
 				B10000017 /* TestConstants.swift */,
 				B10000011 /* IPValidatorTests.swift */,
@@ -305,6 +312,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000007 /* CheckCoordinator.swift in Sources */,
 				C10000002 /* StatusEvaluator.swift in Sources */,
 				A10000001 /* NetworkWatcherApp.swift in Sources */,
 				A10000002 /* AppDelegate.swift in Sources */,
@@ -328,6 +336,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1000000A /* CheckCoordinatorTests.swift in Sources */,
+				C10000008 /* CheckCoordinator.swift in Sources */,
 				C10000005 /* StatusEvaluatorTests.swift in Sources */,
 				C10000003 /* StatusEvaluator.swift in Sources */,
 				B10000006 /* IPValidator.swift in Sources */,

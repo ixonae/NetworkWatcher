@@ -192,4 +192,121 @@ final class IPValidatorTests: XCTestCase {
         XCTAssertFalse(IPValidator.isValidIPOrCIDR("\(TestIP.stub)/-1"))
         XCTAssertFalse(IPValidator.isValidIPOrCIDR(TestIP.overflow2))
     }
+
+    // MARK: - IPv6
+
+    func testIPv6ExactMatch() {
+        let entries = [AllowedIPEntry(range: TestIP.v6)]
+        XCTAssertTrue(IPValidator.validate(ip: TestIP.v6, against: entries).matched)
+        XCTAssertFalse(IPValidator.validate(ip: TestIP.v6SameSubnet, against: entries).matched)
+    }
+
+    func testIPv6ExactMatchIgnoresNotationDifferences() {
+        let entries = [AllowedIPEntry(range: TestIP.v6Expanded)]
+        XCTAssertTrue(IPValidator.validate(ip: TestIP.v6, against: entries).matched)
+        XCTAssertTrue(IPValidator.validate(ip: TestIP.v6.uppercased(), against: entries).matched)
+    }
+
+    func testIPv6CIDR64() {
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6, cidr: TestIP.cidrV6_64))
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6SameSubnet, cidr: TestIP.cidrV6_64))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: TestIP.v6OtherSubnet, cidr: TestIP.cidrV6_64))
+    }
+
+    func testIPv6CIDR48And32() {
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6OtherSubnet, cidr: TestIP.cidrV6_48))
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6OtherSubnet, cidr: TestIP.cidrV6_32))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: TestIP.v6Outside, cidr: TestIP.cidrV6_32))
+    }
+
+    func testIPv6CIDRHostAndAll() {
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6, cidr: TestIP.cidrV6Host))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: TestIP.v6SameSubnet, cidr: TestIP.cidrV6Host))
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6Outside, cidr: TestIP.cidrV6All))
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.v6Loopback, cidr: TestIP.cidrV6All))
+    }
+
+    func testIPv6CIDRNonByteAlignedPrefix() {
+        // /33 splits the third byte: 2001:db8:0000:: vs 2001:db8:8000::
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: "2001:db8:7fff::1", cidr: "2001:db8::/33"))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: "2001:db8:8000::1", cidr: "2001:db8::/33"))
+    }
+
+    func testIPv4CIDRNonByteAlignedPrefix() {
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: TestIP.private172, cidr: "172.16.0.0/12"))
+        XCTAssertTrue(IPValidator.matchesCIDR(ip: "172.31.255.255", cidr: "172.16.0.0/12"))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: "172.32.0.0", cidr: "172.16.0.0/12"))
+    }
+
+    func testCrossFamilyNeverMatches() {
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: TestIP.v6, cidr: TestIP.cidrAll))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: TestIP.stub, cidr: TestIP.cidrV6All))
+        XCTAssertFalse(IPValidator.validate(ip: TestIP.v6Mapped, against: [AllowedIPEntry(range: TestIP.stub)]).matched)
+        XCTAssertFalse(IPValidator.validate(ip: TestIP.stub, against: [AllowedIPEntry(range: TestIP.v6Mapped)]).matched)
+    }
+
+    func testWildcardMatchesIPv6() {
+        let result = IPValidator.validate(ip: TestIP.v6, against: [AllowedIPEntry(range: "*", isVPN: true)])
+        XCTAssertTrue(result.matched)
+        XCTAssertTrue(result.isVPN)
+    }
+
+    func testMixedEntriesMatchIPv6Range() {
+        let entries = [
+            AllowedIPEntry(range: TestIP.cidr10_8),
+            AllowedIPEntry(range: TestIP.cidrV6_64, isVPN: true),
+        ]
+        let result = IPValidator.validate(ip: TestIP.v6, against: entries)
+        XCTAssertTrue(result.matched)
+        XCTAssertTrue(result.isVPN)
+    }
+
+    func testIsValidIPOrCIDRAcceptsIPv6() {
+        XCTAssertTrue(IPValidator.isValidIPOrCIDR(TestIP.v6))
+        XCTAssertTrue(IPValidator.isValidIPOrCIDR(TestIP.v6Loopback))
+        XCTAssertTrue(IPValidator.isValidIPOrCIDR(TestIP.cidrV6_64))
+        XCTAssertTrue(IPValidator.isValidIPOrCIDR(TestIP.cidrV6All))
+        XCTAssertTrue(IPValidator.isValidIPOrCIDR("2001:db8::/128"))
+    }
+
+    func testIsValidIPOrCIDRRejectsInvalidIPv6() {
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("2001:db8::/129"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("2001:db8::/-1"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("2001:db8:::1"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("2001:db8::g"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("1:2:3:4:5:6:7:8:9"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("fe80::1%en0"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("2001:db8::/"))
+    }
+
+    func testIPv4RejectsEmptyOctets() {
+        XCTAssertNil(IPValidator.ipToUInt32("1..2.3.4"))
+        XCTAssertNil(IPValidator.ipToUInt32("1.2.3.4."))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("1.2.3.4./24"))
+    }
+
+    // MARK: - isValidIPAddress
+
+    func testIsValidIPAddressAcceptsPlainAddresses() {
+        XCTAssertTrue(IPValidator.isValidIPAddress(TestIP.stub))
+        XCTAssertTrue(IPValidator.isValidIPAddress(TestIP.v6))
+        XCTAssertTrue(IPValidator.isValidIPAddress(TestIP.v6Mapped))
+        XCTAssertTrue(IPValidator.isValidIPAddress(" \(TestIP.stub) "))
+    }
+
+    func testIsValidIPAddressRejectsRangesAndJunk() {
+        XCTAssertFalse(IPValidator.isValidIPAddress("*"))
+        XCTAssertFalse(IPValidator.isValidIPAddress(TestIP.cidr10_24))
+        XCTAssertFalse(IPValidator.isValidIPAddress(TestIP.cidrV6_64))
+        XCTAssertFalse(IPValidator.isValidIPAddress(""))
+        XCTAssertFalse(IPValidator.isValidIPAddress("<html><body>Login</body></html>"))
+        XCTAssertFalse(IPValidator.isValidIPAddress(TestIP.overflow))
+    }
+
+    func testParseDistinguishesFamilies() {
+        XCTAssertEqual(IPValidator.parse(TestIP.stub)?.bytes, [1, 2, 3, 4])
+        XCTAssertEqual(IPValidator.parse(TestIP.stub)?.isIPv6, false)
+        XCTAssertEqual(IPValidator.parse(TestIP.v6Loopback)?.bytes, Array(repeating: 0, count: 15) + [1])
+        XCTAssertEqual(IPValidator.parse(TestIP.v6Mapped)?.isIPv6, true)
+    }
 }

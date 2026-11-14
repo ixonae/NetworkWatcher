@@ -5,41 +5,74 @@ struct IPValidationResult {
     var isVPN: Bool
 }
 
+/// A parsed IPv4 (4 bytes) or IPv6 (16 bytes) address.
+struct ParsedIP: Equatable {
+    let bytes: [UInt8]
+
+    var isIPv6: Bool { bytes.count == 16 }
+    var bitCount: Int { bytes.count * 8 }
+}
+
 struct IPValidator {
     static func validate(ip: String, against entries: [AllowedIPEntry]) -> IPValidationResult {
         for entry in entries {
-            let range = entry.range
-            if range.trimmingCharacters(in: .whitespaces) == "*" {
-                return IPValidationResult(matched: true, isVPN: entry.isVPN)
+            let range = entry.range.trimmingCharacters(in: .whitespaces)
+            let matched: Bool
+            if range == "*" {
+                matched = true
             } else if range.contains("/") {
-                if matchesCIDR(ip: ip, cidr: range) {
-                    return IPValidationResult(matched: true, isVPN: entry.isVPN)
-                }
+                matched = matchesCIDR(ip: ip, cidr: range)
+            } else if let address = parse(ip), let expected = parse(range) {
+                // Compare parsed addresses so "2001:DB8::1" equals "2001:db8:0:0::1".
+                matched = address == expected
             } else {
-                if ip == range.trimmingCharacters(in: .whitespaces) {
-                    return IPValidationResult(matched: true, isVPN: entry.isVPN)
-                }
+                matched = false
+            }
+            if matched {
+                return IPValidationResult(matched: true, isVPN: entry.isVPN)
             }
         }
         return IPValidationResult(matched: false, isVPN: false)
     }
 
+    /// True when `ip` falls inside `cidr`. An IPv4 address never matches an IPv6 range, or vice versa.
     static func matchesCIDR(ip: String, cidr: String) -> Bool {
-        let parts = cidr.split(separator: "/")
-        guard parts.count == 2,
-              let prefixLength = Int(parts[1]),
-              prefixLength >= 0 && prefixLength <= 32,
-              let ipNum = ipToUInt32(String(ip)),
-              let networkNum = ipToUInt32(String(parts[0])) else {
+        guard let (network, prefixLength) = parseCIDR(cidr),
+              let address = parse(ip),
+              address.isIPv6 == network.isIPv6 else {
             return false
         }
 
-        let mask: UInt32 = prefixLength == 0 ? 0 : ~UInt32(0) << (32 - prefixLength)
-        return (ipNum & mask) == (networkNum & mask)
+        var remaining = prefixLength
+        for (addressByte, networkByte) in zip(address.bytes, network.bytes) where remaining > 0 {
+            let bits = min(remaining, 8)
+            let mask = UInt8(truncatingIfNeeded: 0xFF << (8 - bits))
+            if addressByte & mask != networkByte & mask {
+                return false
+            }
+            remaining -= bits
+        }
+        return true
+    }
+
+    /// Parses a plain IPv4 or IPv6 address (no prefix, no zone). IPv4-mapped IPv6 addresses
+    /// such as "::ffff:1.2.3.4" are treated as IPv6, matching how lookup services report them.
+    static func parse(_ ip: String) -> ParsedIP? {
+        let trimmed = ip.trimmingCharacters(in: .whitespaces)
+        if trimmed.contains(":") {
+            // Darwin's inet_pton accepts "%zone" suffixes, which are meaningless for external IPs.
+            guard !trimmed.contains("%") else { return nil }
+            var address = in6_addr()
+            guard inet_pton(AF_INET6, trimmed, &address) == 1 else { return nil }
+            let bytes = withUnsafeBytes(of: &address) { Array($0) }
+            return ParsedIP(bytes: bytes)
+        }
+        guard let value = ipToUInt32(trimmed) else { return nil }
+        return ParsedIP(bytes: withUnsafeBytes(of: value.bigEndian) { Array($0) })
     }
 
     static func ipToUInt32(_ ip: String) -> UInt32? {
-        let octets = ip.trimmingCharacters(in: .whitespaces).split(separator: ".")
+        let octets = ip.trimmingCharacters(in: .whitespaces).split(separator: ".", omittingEmptySubsequences: false)
         guard octets.count == 4 else { return nil }
 
         var result: UInt32 = 0
@@ -50,21 +83,30 @@ struct IPValidator {
         return result
     }
 
+    /// True for a single IPv4 or IPv6 address; rejects CIDR ranges and "*".
+    static func isValidIPAddress(_ input: String) -> Bool {
+        parse(input) != nil
+    }
+
     static func isValidIPOrCIDR(_ input: String) -> Bool {
         let trimmed = input.trimmingCharacters(in: .whitespaces)
         if trimmed == "*" {
             return true
         } else if trimmed.contains("/") {
-            let parts = trimmed.split(separator: "/")
-            guard parts.count == 2,
-                  let prefix = Int(parts[1]),
-                  prefix >= 0 && prefix <= 32,
-                  ipToUInt32(String(parts[0])) != nil else {
-                return false
-            }
-            return true
+            return parseCIDR(trimmed) != nil
         } else {
-            return ipToUInt32(trimmed) != nil
+            return parse(trimmed) != nil
         }
+    }
+
+    private static func parseCIDR(_ cidr: String) -> (ParsedIP, Int)? {
+        let parts = cidr.trimmingCharacters(in: .whitespaces).split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2,
+              let prefixLength = Int(parts[1]),
+              let network = parse(String(parts[0])),
+              (0...network.bitCount).contains(prefixLength) else {
+            return nil
+        }
+        return (network, prefixLength)
     }
 }

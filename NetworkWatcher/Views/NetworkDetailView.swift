@@ -60,7 +60,7 @@ struct NetworkDetailView: View {
             }
 
             HStack {
-                TextField("IP, CIDR, or * (e.g. 1.2.3.4, 10.0.0.0/24, *)", text: $newIP)
+                TextField("IP, CIDR, or * (e.g. 1.2.3.4, 10.0.0.0/24, 2001:db8::/48, *)", text: $newIP)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { addIP() }
                 Toggle("VPN", isOn: $newIPIsVPN)
@@ -69,7 +69,7 @@ struct NetworkDetailView: View {
                     .disabled(!IPValidator.isValidIPOrCIDR(newIP))
             }
 
-            Text("Use a specific IP (1.2.3.4), a CIDR range (10.0.0.0/24), or * to allow any IP address on this network. Check VPN to indicate this IP/range is accessed through a VPN.")
+            Text("Use a specific IPv4 or IPv6 address (1.2.3.4, 2001:db8::1), a CIDR range (10.0.0.0/24, 2001:db8::/48), or * to allow any IP address on this network. Check VPN to indicate this IP/range is accessed through a VPN.")
                 .font(.caption)
                 .foregroundColor(.secondary)
 

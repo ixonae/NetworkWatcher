@@ -11,11 +11,11 @@ This is useful if you want to make sure your VPN is active, or that your traffic
 ## Features
 
 - **Menu bar status icon** showing connection state at a glance (match, mismatch, VPN, unknown, no network)
-- **Per-network IP rules** — configure allowed IP ranges (individual IPs or CIDR notation) for each WiFi network, Ethernet, USB, or Thunderbolt connection
+- **Per-network IP rules** — configure allowed IP ranges (individual IPv4/IPv6 addresses or CIDR notation) for each WiFi network, Ethernet, USB, or Thunderbolt connection
 - **VPN-aware** — mark networks as VPN to get a distinct shield icon when connected
 - **Unconfigured network handling** — choose to alert or allow networks without configured IP ranges
 - **Configurable check interval** — set how often the IP is verified (default: 60 seconds)
-- **Custom IP lookup service** — use ipify, ifconfig.me, icanhazip.com, or any custom URL (with optional auth token)
+- **Custom IP lookup service** — use ipify, icanhazip or ident.me (IPv4-only endpoints), or any custom URL (with optional auth token)
 - **Optional IP display** in the menu bar
 - **Launch at login** support
 
