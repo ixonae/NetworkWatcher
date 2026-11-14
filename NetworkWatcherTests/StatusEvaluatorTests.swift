@@ -183,4 +183,70 @@ final class StatusEvaluatorTests: XCTestCase {
             .evaluate(ip: TestIP.dns, activeIdentifiers: ["homewifi"], alertState: AlertState())
         XCTAssertEqual(result.alert, .mismatch(ip: TestIP.dns, networkName: "HomeWiFi"))
     }
+
+    // MARK: - Location permission
+
+    func testBlockedSSIDWithNoMatchAsksForPermission() {
+        let result = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: [], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertEqual(result.status, .unknown)
+        XCTAssertEqual(result.alert, .locationPermissionNeeded)
+        XCTAssertTrue(result.alertState.locationAlertShown)
+        XCTAssertFalse(result.alertState.mismatchAcknowledged)
+    }
+
+    func testPermissionAlertIsShownOnce() {
+        let state = AlertState(locationAlertShown: true)
+        let result = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: [], alertState: state, ssidBlockedByPermission: true)
+        XCTAssertEqual(result.status, .unknown)
+        XCTAssertNil(result.alert)
+    }
+
+    func testMutedPermissionAlertIsSuppressedButRecorded() {
+        let result = evaluator(muted: true).evaluate(ip: TestIP.dns, activeIdentifiers: [], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertNil(result.alert)
+        XCTAssertTrue(result.alertState.locationAlertShown)
+    }
+
+    func testBlockedSSIDWithExactWiredMatchEvaluatesNormally() {
+        let result = evaluator(networks: [home, ethernet])
+            .evaluate(ip: TestIP.private10, activeIdentifiers: ["Ethernet"], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertEqual(result.status, .match)
+        XCTAssertNil(result.alert)
+    }
+
+    func testBlockedSSIDWithCatchAllAndWiFiRulesAsksForPermission() {
+        let result = evaluator(networks: [home, catchAll])
+            .evaluate(ip: TestIP.dns, activeIdentifiers: [], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertEqual(result.alert, .locationPermissionNeeded)
+    }
+
+    func testBlockedSSIDWithOnlyCatchAllEvaluatesNormally() {
+        let result = evaluator(networks: [catchAll, ethernet])
+            .evaluate(ip: TestIP.private172, activeIdentifiers: [], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertEqual(result.status, .match)
+    }
+
+    func testPermissionStateResetsOnceSSIDIsReadable() {
+        let state = AlertState(locationAlertShown: true)
+        let result = evaluator().evaluate(ip: TestIP.private192_100, activeIdentifiers: ["HomeWiFi"], alertState: state)
+        XCTAssertEqual(result.status, .match)
+        XCTAssertFalse(result.alertState.locationAlertShown)
+    }
+
+    func testPermissionCheckKeepsExistingMismatchState() {
+        let result = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: [], alertState: acknowledgedHome, ssidBlockedByPermission: true)
+        XCTAssertEqual(result.alertState.acknowledgedNetwork, "HomeWiFi")
+        XCTAssertTrue(result.alertState.mismatchAcknowledged)
+    }
+
+    // MARK: - NetworkEntry kinds
+
+    func testNetworkEntryKinds() {
+        XCTAssertTrue(home.isWiFiNetwork)
+        XCTAssertFalse(catchAll.isWiFiNetwork)
+        XCTAssertTrue(catchAll.isCatchAll)
+        for wired in ["Ethernet", "USB", "Thunderbolt"] {
+            XCTAssertFalse(NetworkEntry(networkIdentifier: wired).isWiFiNetwork, wired)
+        }
+    }
 }

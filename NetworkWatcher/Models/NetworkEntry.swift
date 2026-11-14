@@ -7,9 +7,17 @@ struct AllowedIPEntry: Codable, Identifiable, Hashable {
 }
 
 struct NetworkEntry: Codable, Identifiable, Hashable {
+    /// Identifiers reported for wired connections rather than a Wi-Fi SSID.
+    static let wiredIdentifiers: Set<String> = ["Ethernet", "USB", "Thunderbolt"]
+
     var id: UUID = UUID()
     var networkIdentifier: String
     var allowedIPRanges: [AllowedIPEntry] = []
+
+    var isCatchAll: Bool { networkIdentifier == "*" }
+
+    /// True for entries keyed on a Wi-Fi SSID, which needs location permission to read.
+    var isWiFiNetwork: Bool { !isCatchAll && !Self.wiredIdentifiers.contains(networkIdentifier) }
 
     enum CodingKeys: String, CodingKey {
         case id, networkIdentifier, allowedIPRanges, isVPN

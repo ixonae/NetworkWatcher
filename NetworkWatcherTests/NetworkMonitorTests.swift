@@ -1,4 +1,5 @@
 import XCTest
+import CoreLocation
 import Cocoa
 
 /// Captures debounced work items so tests control when they run instead of waiting on the clock.
@@ -255,5 +256,136 @@ final class NetworkMonitorTests: XCTestCase {
             weakMonitor = local
         }
         XCTAssertNil(weakMonitor)
+    }
+
+    // MARK: - Interface classification
+
+    private func classify(_ bsd: String, _ type: String, _ display: String, wifi: Bool = false) -> InterfaceType? {
+        NetworkMonitor.classify(bsdName: bsd, interfaceType: type, displayName: display, isWiFi: wifi)
+    }
+
+    func testClassifyBuiltInEthernet() {
+        XCTAssertEqual(classify("en7", "Ethernet", "Ethernet"), .ethernet)
+    }
+
+    func testClassifyUSBAdapter() {
+        XCTAssertEqual(classify("en8", "Ethernet", "USB 10/100/1000 LAN"), .usb)
+    }
+
+    func testClassifyThunderboltPortAndAdapter() {
+        XCTAssertEqual(classify("en1", "Ethernet", "Thunderbolt 1"), .thunderbolt)
+        XCTAssertEqual(classify("en9", "Ethernet", "Thunderbolt Ethernet Slot 1"), .thunderbolt)
+    }
+
+    func testClassifyThunderboltBridge() {
+        XCTAssertEqual(classify("bridge0", "Bridge", "Thunderbolt Bridge"), .thunderbolt)
+        XCTAssertEqual(classify("bridge1", "Bridge", ""), .thunderbolt)
+    }
+
+    func testClassifySkipsWiFiAndTunnels() {
+        XCTAssertNil(classify("en0", "IEEE80211", "Wi-Fi", wifi: true))
+        XCTAssertNil(classify("utun3", "", ""))
+        XCTAssertNil(classify("ipsec0", "IPSec", "VPN"))
+    }
+
+    func testClassifyUnknownEnInterfaceAsEthernet() {
+        XCTAssertEqual(classify("en5", "", ""), .ethernet)
+    }
+
+    func testClassifyNonWiFiIEEE80211AsEthernet() {
+        XCTAssertEqual(classify("en10", "IEEE80211", "Wi-Fi 2"), .ethernet)
+    }
+
+    func testClassifyOtherInterface() {
+        XCTAssertEqual(classify("ppp0", "PPP", "Modem"), .other("PPP"))
+    }
+
+    // MARK: - Network identifiers
+
+    func testIdentifiersStartWithSSID() {
+        XCTAssertEqual(NetworkMonitor.networkIdentifiers(ssid: "Home", interfaceTypes: [.ethernet]), ["Home", "Ethernet"])
+    }
+
+    func testIdentifiersWithoutSSID() {
+        XCTAssertEqual(NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: []), [])
+        XCTAssertEqual(NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.ethernet]), ["Ethernet"])
+    }
+
+    func testUSBAlsoReportsEthernetFallback() {
+        XCTAssertEqual(NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.usb]), ["USB", "Ethernet"])
+    }
+
+    func testThunderboltAlsoReportsEthernetFallback() {
+        XCTAssertEqual(NetworkMonitor.networkIdentifiers(ssid: "Home", interfaceTypes: [.thunderbolt]), ["Home", "Thunderbolt", "Ethernet"])
+    }
+
+    func testSpecificTypesComeBeforeEthernetFallback() {
+        XCTAssertEqual(
+            NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.usb, .thunderbolt]),
+            ["USB", "Thunderbolt", "Ethernet"]
+        )
+    }
+
+    func testIdentifiersAreDeduplicated() {
+        XCTAssertEqual(
+            NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.ethernet, .usb, .ethernet, .thunderbolt, .thunderbolt]),
+            ["Ethernet", "USB", "Thunderbolt"]
+        )
+    }
+
+    func testOtherInterfacesAreIgnored() {
+        XCTAssertEqual(NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.other("PPP")]), [])
+    }
+
+    func testEthernetRuleStillMatchesUSBAdapter() {
+        let ethernet = NetworkEntry(networkIdentifier: "Ethernet", allowedIPRanges: [AllowedIPEntry(range: TestIP.cidr10_8)])
+        let identifiers = NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.usb])
+        XCTAssertEqual(NetworkManager.network(forActiveIdentifiers: identifiers, in: [ethernet])?.networkIdentifier, "Ethernet")
+    }
+
+    func testUSBRuleBeatsEthernetRule() {
+        let ethernet = NetworkEntry(networkIdentifier: "Ethernet")
+        let usb = NetworkEntry(networkIdentifier: "USB")
+        let identifiers = NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.usb])
+        XCTAssertEqual(NetworkManager.network(forActiveIdentifiers: identifiers, in: [ethernet, usb])?.networkIdentifier, "USB")
+    }
+
+    // MARK: - Location permission
+
+    func testSSIDBlockedWhenWiFiOnWithoutPermission() {
+        for status in [CLAuthorizationStatus.notDetermined, .denied, .restricted] {
+            XCTAssertTrue(NetworkMonitor.ssidBlockedByPermission(authorization: status, wifiPoweredOn: true, ssid: nil), "\(status.rawValue)")
+        }
+    }
+
+    func testSSIDNotBlockedWhenAuthorized() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .authorizedAlways, wifiPoweredOn: true, ssid: nil))
+    }
+
+    func testSSIDNotBlockedWhenWiFiOff() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: false, ssid: nil))
+    }
+
+    func testSSIDNotBlockedWhenSSIDIsReadable() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: true, ssid: "Home"))
+    }
+
+    func testLocationSettingsURLTargetsLocationServices() {
+        XCTAssertEqual(NetworkMonitor.locationSettingsURL.scheme, "x-apple.systempreferences")
+        XCTAssertTrue(NetworkMonitor.locationSettingsURL.absoluteString.hasSuffix("Privacy_LocationServices"))
+    }
+
+    func testAuthorizationChangeSchedulesRecheck() {
+        var scheduled = 0
+        let monitor = NetworkMonitor(debounceInterval: 0) { _, _ in scheduled += 1 }
+        monitor.startMonitoring()
+        defer { monitor.stopMonitoring() }
+
+        monitor.locationManagerDidChangeAuthorization(CLLocationManager())
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+
+        XCTAssertEqual(scheduled, 1)
     }
 }

@@ -98,6 +98,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         lastCheckItem.tag = 102
         menu.addItem(lastCheckItem)
 
+        let locationItem = NSMenuItem(title: "Allow Location Access…", action: #selector(openLocationSettings), keyEquivalent: "")
+        locationItem.tag = 104
+        locationItem.target = self
+        locationItem.isHidden = true
+        menu.addItem(locationItem)
+
         menu.addItem(NSMenuItem.separator())
 
         let showIPItem = NSMenuItem(title: "Show IP in Menu Bar", action: #selector(toggleShowIP), keyEquivalent: "")
@@ -156,6 +162,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let showIPItem = menu.item(withTag: 101) {
             showIPItem.state = networkManager.settings.showIPInMenuBar ? .on : .off
+        }
+
+        if let locationItem = menu.item(withTag: 104) {
+            locationItem.isHidden = !networkMonitor.isSSIDBlockedByPermission
         }
 
         if let muteAlertsItem = menu.item(withTag: 103) {
@@ -248,7 +258,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let evaluation = evaluator.evaluate(
                 ip: ip,
                 activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
-                alertState: alertState
+                alertState: alertState,
+                ssidBlockedByPermission: networkMonitor.isSSIDBlockedByPermission
             )
             ipStatus = evaluation.status
             // Store state before presenting a modal alert: checks can run while it is open.
@@ -282,7 +293,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
         case let .restored(ip, networkName):
             showRestoredAlert(ip: ip, networkName: networkName)
+        case .locationPermissionNeeded:
+            showLocationPermissionAlert()
         }
+    }
+
+    private func showLocationPermissionAlert() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "Location Access Needed"
+        alert.informativeText = "macOS only reveals the Wi-Fi network name to apps with location access, so Network Watcher can't tell which network you're on.\n\nAllow Network Watcher in Privacy & Security > Location Services."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Not Now")
+        if alert.runModal() == .alertFirstButtonReturn {
+            openLocationSettings()
+        }
+    }
+
+    @objc private func openLocationSettings() {
+        NSWorkspace.shared.open(NetworkMonitor.locationSettingsURL)
     }
 
     private func showMismatchAlert(ip: String, networkName: String) {

@@ -148,66 +148,99 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
         return wifiClient.interface()?.ssid()
     }
 
+    /// True when Wi-Fi is on but macOS withholds the SSID because location access isn't granted.
+    var isSSIDBlockedByPermission: Bool {
+        let wifi = wifiClient.interface()
+        return Self.ssidBlockedByPermission(
+            authorization: locationManager.authorizationStatus,
+            wifiPoweredOn: wifi?.powerOn() ?? false,
+            ssid: wifi?.ssid()
+        )
+    }
+
+    static func ssidBlockedByPermission(authorization: CLAuthorizationStatus, wifiPoweredOn: Bool, ssid: String?) -> Bool {
+        // macOS reports granted location access as .authorizedAlways (there is no "when in use").
+        return wifiPoweredOn && ssid == nil && authorization != .authorizedAlways
+    }
+
+    /// System Settings pane where the user grants location access.
+    static let locationSettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
+
     /// Returns all active network identifiers: WiFi SSID if connected, plus interface types like "Ethernet".
     func activeNetworkIdentifiers() -> [String] {
+        Self.networkIdentifiers(ssid: currentSSID(), interfaceTypes: activeInterfaces().map(\.type))
+    }
+
+    /// SSID first, then each wired type once ("Ethernet", "USB", "Thunderbolt"). USB and Thunderbolt
+    /// links are also reported as "Ethernet" after all specific types, so rules created for "Ethernet"
+    /// before USB/Thunderbolt were detected keep matching, while a specific rule still wins.
+    static func networkIdentifiers(ssid: String?, interfaceTypes: [InterfaceType]) -> [String] {
         var identifiers: [String] = []
-
-        if let ssid = currentSSID() {
-            identifiers.append(ssid)
-        }
-
-        for iface in activeInterfaces() {
-            switch iface.type {
-            case .ethernet:
-                identifiers.append("Ethernet")
-            case .usb:
-                identifiers.append("USB")
-            case .thunderbolt:
-                identifiers.append("Thunderbolt")
-            default:
-                break
+        func append(_ identifier: String) {
+            if !identifiers.contains(identifier) {
+                identifiers.append(identifier)
             }
         }
 
+        if let ssid {
+            append(ssid)
+        }
+        for type in interfaceTypes {
+            switch type {
+            case .ethernet: append("Ethernet")
+            case .usb: append("USB")
+            case .thunderbolt: append("Thunderbolt")
+            case .other: break
+            }
+        }
+        if interfaceTypes.contains(where: { $0 == .usb || $0 == .thunderbolt }) {
+            append("Ethernet")
+        }
         return identifiers
     }
 
+    /// Classifies a SystemConfiguration interface; nil for interfaces that aren't a network to match on.
+    ///
+    /// Wired adapters all report type "Ethernet", so USB and Thunderbolt are told apart by display name.
+    /// Values seen on macOS 26: ("en1", "Ethernet", "Thunderbolt 1"), ("bridge0", "Bridge",
+    /// "Thunderbolt Bridge"), ("en0", "IEEE80211", "Wi-Fi"); USB adapters show e.g. "USB 10/100/1000 LAN"
+    /// and Apple's Thunderbolt adapter "Thunderbolt Ethernet".
+    static func classify(bsdName: String, interfaceType: String, displayName: String, isWiFi: Bool) -> InterfaceType? {
+        if isWiFi || bsdName.hasPrefix("utun") || bsdName.hasPrefix("ipsec") {
+            return nil // Wi-Fi is matched by SSID; VPN tunnels are skipped
+        }
+        let name = displayName.lowercased()
+        if interfaceType == "Bridge" || name.contains("thunderbolt") {
+            return .thunderbolt
+        }
+        if name.contains("usb") {
+            return .usb
+        }
+        if interfaceType == "Ethernet" || interfaceType == "IEEE80211" || bsdName.hasPrefix("en") {
+            return .ethernet
+        }
+        return .other(interfaceType)
+    }
+
     private func activeInterfaces() -> [NetworkInterface] {
-        var result: [NetworkInterface] = []
-
         guard let interfaces = SCNetworkInterfaceCopyAll() as? [SCNetworkInterface] else {
-            return result
+            return []
         }
+        let wifiName = wifiClient.interface()?.interfaceName
 
-        for iface in interfaces {
+        return interfaces.compactMap { iface in
             let bsdName = SCNetworkInterfaceGetBSDName(iface) as String? ?? ""
-            let typeStr = SCNetworkInterfaceGetInterfaceType(iface) as String? ?? ""
-
-            guard isInterfaceActive(bsdName) else { continue }
-
-            let type: InterfaceType
-            switch typeStr {
-            case "Ethernet", "IEEE80211":
-                if wifiClient.interface()?.interfaceName == bsdName {
-                    continue // WiFi handled separately via SSID
-                }
-                type = .ethernet
-            case "Bridge":
-                type = .ethernet
-            default:
-                if bsdName.hasPrefix("en") {
-                    type = .ethernet
-                } else if bsdName.hasPrefix("utun") || bsdName.hasPrefix("ipsec") {
-                    continue // VPN tunnels, skip
-                } else {
-                    type = .other(typeStr)
-                }
+            guard isInterfaceActive(bsdName),
+                  let type = Self.classify(
+                      bsdName: bsdName,
+                      interfaceType: SCNetworkInterfaceGetInterfaceType(iface) as String? ?? "",
+                      displayName: SCNetworkInterfaceGetLocalizedDisplayName(iface) as String? ?? "",
+                      isWiFi: bsdName == wifiName
+                  ) else {
+                return nil
             }
-
-            result.append(NetworkInterface(name: bsdName, type: type))
+            return NetworkInterface(name: bsdName, type: type)
         }
-
-        return result
     }
 
     private func isInterfaceActive(_ bsdName: String) -> Bool {
@@ -232,7 +265,8 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
     // MARK: - CLLocationManagerDelegate
 
     func locationManagerDidChangeAuthorization(_: CLLocationManager) {
-        // Permission changed; the next SSID check will now work if authorized
+        // The SSID may have become readable (or hidden), so re-evaluate the network.
+        DispatchQueue.main.async { [weak self] in self?.scheduleChangeNotification() }
     }
 }
 
@@ -249,7 +283,7 @@ private final class WeakMonitorBox {
     }
 }
 
-enum InterfaceType {
+enum InterfaceType: Equatable {
     case ethernet
     case usb
     case thunderbolt

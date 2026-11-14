@@ -13,12 +13,15 @@ struct AlertState: Equatable {
     var mismatchAcknowledged = false
     /// Network the current mismatch alert was shown for, so moving to another bad network alerts again.
     var acknowledgedNetwork: String?
+    /// Whether the user was told that location permission is needed to read the Wi-Fi name.
+    var locationAlertShown = false
 }
 
 enum StatusAlert: Equatable {
     case mismatch(ip: String, networkName: String)
     case unconfigured(ip: String, networkName: String)
     case restored(ip: String, networkName: String)
+    case locationPermissionNeeded
 }
 
 struct StatusEvaluation: Equatable {
@@ -34,10 +37,28 @@ struct StatusEvaluator {
     var allowUnconfiguredNetworks: Bool
     var muteAlerts: Bool
 
-    func evaluate(ip: String, activeIdentifiers: [String], alertState: AlertState) -> StatusEvaluation {
+    /// - Parameter ssidBlockedByPermission: Wi-Fi is on but macOS hides the SSID because the app
+    ///   lacks location permission, so the active identifiers are missing the Wi-Fi network.
+    func evaluate(
+        ip: String,
+        activeIdentifiers: [String],
+        alertState: AlertState,
+        ssidBlockedByPermission: Bool = false
+    ) -> StatusEvaluation {
         let matchedNetwork = NetworkManager.network(forActiveIdentifiers: activeIdentifiers, in: networks)
+
+        var alertState = alertState
+        if !ssidBlockedByPermission {
+            alertState.locationAlertShown = false
+        } else if needsSSID(matchedNetwork) {
+            // Without the SSID the result would be a misleading "Unknown" network alert.
+            let alert: StatusAlert? = alertState.locationAlertShown || muteAlerts ? nil : .locationPermissionNeeded
+            alertState.locationAlertShown = true
+            return StatusEvaluation(status: .unknown, alert: alert, alertState: alertState)
+        }
+
         // A catch-all match is reported under the real network name, not "*".
-        let networkName = matchedNetwork.flatMap { $0.networkIdentifier == "*" ? nil : $0.networkIdentifier }
+        let networkName = matchedNetwork.flatMap { $0.isCatchAll ? nil : $0.networkIdentifier }
             ?? activeIdentifiers.first
             ?? "Unknown"
 
@@ -55,6 +76,13 @@ struct StatusEvaluator {
         return mismatched(.mismatch(ip: ip, networkName: networkName), networkName: networkName, alertState: alertState)
     }
 
+    /// Whether the missing SSID could change the outcome: nothing matched exactly, and either
+    /// nothing matched at all or some rule is keyed on a Wi-Fi name.
+    private func needsSSID(_ matchedNetwork: NetworkEntry?) -> Bool {
+        guard let matchedNetwork else { return true }
+        return matchedNetwork.isCatchAll && networks.contains(where: \.isWiFiNetwork)
+    }
+
     private func matched(_ status: IPStatus, ip: String, networkName: String, alertState: AlertState) -> StatusEvaluation {
         var newState = alertState
         newState.mismatchAcknowledged = false
@@ -70,7 +98,9 @@ struct StatusEvaluator {
             return StatusEvaluation(status: .mismatch, alert: nil, alertState: alertState)
         }
         // Acknowledged even when muted, so unmuting doesn't replay an old mismatch.
-        let newState = AlertState(mismatchAcknowledged: true, acknowledgedNetwork: networkName)
+        var newState = alertState
+        newState.mismatchAcknowledged = true
+        newState.acknowledgedNetwork = networkName
         return StatusEvaluation(status: .mismatch, alert: muteAlerts ? nil : alert, alertState: newState)
     }
 }
