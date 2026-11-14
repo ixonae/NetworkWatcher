@@ -59,6 +59,8 @@ struct IPValidator {
     /// such as "::ffff:1.2.3.4" are treated as IPv6, matching how lookup services report them.
     static func parse(_ ip: String) -> ParsedIP? {
         let trimmed = ip.trimmingCharacters(in: .whitespaces)
+        // inet_pton reads a C string, so it would stop at a NUL and accept an address followed by junk.
+        guard !trimmed.contains("\0") else { return nil }
         if trimmed.contains(":") {
             // Darwin's inet_pton accepts "%zone" suffixes, which are meaningless for external IPs.
             guard !trimmed.contains("%") else { return nil }
