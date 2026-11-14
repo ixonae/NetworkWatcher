@@ -13,6 +13,9 @@ struct AlertState: Equatable {
     var mismatchAcknowledged = false
     /// Network the current mismatch alert was shown for, so moving to another bad network alerts again.
     var acknowledgedNetwork: String?
+    /// Whether a mismatch alert was actually presented (not muted), so a restore is only announced
+    /// for a mismatch the user was told about.
+    var mismatchPresented = false
     /// Whether the user was told that location permission is needed to read the Wi-Fi name.
     var locationAlertShown = false
 }
@@ -100,7 +103,8 @@ struct StatusEvaluator {
     private func matched(_ status: IPStatus, ip: String, networkName: String, alertState: AlertState) -> StatusEvaluation {
         var newState = alertState
         newState.mismatchAcknowledged = false
-        let alert: StatusAlert? = alertState.mismatchAcknowledged && !muteAlerts
+        newState.mismatchPresented = false
+        let alert: StatusAlert? = alertState.mismatchPresented && !muteAlerts
             ? .restored(ip: ip, networkName: networkName)
             : nil
         return StatusEvaluation(status: status, alert: alert, alertState: newState)
@@ -115,6 +119,7 @@ struct StatusEvaluator {
         var newState = alertState
         newState.mismatchAcknowledged = true
         newState.acknowledgedNetwork = networkName
+        newState.mismatchPresented = !muteAlerts
         return StatusEvaluation(status: .mismatch, alert: muteAlerts ? nil : alert, alertState: newState)
     }
 }

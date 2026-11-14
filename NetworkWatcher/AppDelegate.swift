@@ -39,7 +39,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private let modalPresenter = ModalAlertPresenter()
     private lazy var notificationPresenter = NotificationAlertPresenter { [weak self] in self?.openSettings() }
-    private var notificationsAllowed = false
+    private var alertTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_: Notification) {
         networkMonitor.requestLocationPermission()
@@ -101,6 +101,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alertState = evaluation.alertState
         updateStatusIcon()
         refreshMenu()
+
+        // Other alerts are not shown for a change the user just made, but this one is not about
+        // that change; its state is already marked shown, so it would otherwise never appear.
+        if evaluation.alert == .locationPermissionNeeded, let alert = evaluation.alert {
+            present(alert)
+        }
     }
 
     // MARK: - Status Item
@@ -344,9 +350,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func present(_ alert: StatusAlert) {
         let content = AlertContent(alert)
-        Task { @MainActor in
+        // Chained so alerts appear in the order they were raised, even though each awaits the
+        // notification permission: otherwise an older mismatch could land after its recovery.
+        let previous = alertTask
+        alertTask = Task { @MainActor in
+            await previous?.value
+            // Withdraw regardless of style: a recovery shown as a popup must still clear a delivered mismatch.
+            notificationPresenter.withdraw(content.supersedes)
             // Re-read each time: the user may have allowed or blocked notifications in System Settings.
-            notificationsAllowed = await notificationPresenter.isAuthorized()
+            let notificationsAllowed = await notificationPresenter.isAuthorized()
             let style = AlertStyle.effective(
                 preferred: networkManager.settings.alertStyle,
                 notificationsAllowed: notificationsAllowed
@@ -360,7 +372,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func requestNotificationPermission() {
         Task { @MainActor in
-            notificationsAllowed = await notificationPresenter.requestAuthorization()
+            _ = await notificationPresenter.requestAuthorization()
         }
     }
 
