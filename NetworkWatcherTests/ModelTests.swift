@@ -250,11 +250,30 @@ final class ModelTests: XCTestCase {
 
     // MARK: - SettingsChange
 
-    func testFirstSettingsUpdateStartsTimerOnly() {
+    func testFirstSettingsUpdateStartsTimerAndRequestsNotificationPermission() {
         XCTAssertEqual(
             SettingsChange.between(nil, AppSettings()),
-            SettingsChange(restartTimer: true, recheck: false, reevaluate: false)
+            SettingsChange(restartTimer: true, recheck: false, reevaluate: false, requestNotificationPermission: true)
         )
+    }
+
+    func testFirstSettingsUpdateWithPopupsSkipsNotificationPermission() {
+        var settings = AppSettings()
+        settings.alertStyle = .popup
+        XCTAssertFalse(SettingsChange.between(nil, settings).requestNotificationPermission)
+    }
+
+    func testSwitchingToNotificationsRequestsPermission() {
+        var old = AppSettings()
+        old.alertStyle = .popup
+        XCTAssertTrue(SettingsChange.between(old, AppSettings()).requestNotificationPermission)
+    }
+
+    func testSwitchingToPopupsOrKeepingStyleDoesNotRequestPermission() {
+        var popup = AppSettings()
+        popup.alertStyle = .popup
+        XCTAssertFalse(SettingsChange.between(AppSettings(), popup).requestNotificationPermission)
+        XCTAssertFalse(SettingsChange.between(AppSettings(), AppSettings()).requestNotificationPermission)
     }
 
     func testUnchangedSettingsNeedNothing() {
@@ -296,5 +315,39 @@ final class ModelTests: XCTestCase {
             SettingsChange.between(AppSettings(), new),
             SettingsChange(restartTimer: false, recheck: false, reevaluate: false)
         )
+    }
+
+    // MARK: - Alert style
+
+    func testAlertStyleDefaultsToNotification() {
+        XCTAssertEqual(AppSettings().alertStyle, .notification)
+    }
+
+    func testAlertStyleMissingFromStoredSettingsDefaultsToNotification() throws {
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"muteAlerts":true}"#.utf8))
+        XCTAssertEqual(decoded.alertStyle, .notification)
+    }
+
+    func testUnknownAlertStyleDefaultsToNotification() throws {
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"alertStyle":"hologram"}"#.utf8))
+        XCTAssertEqual(decoded.alertStyle, .notification)
+    }
+
+    func testAlertStyleRoundTrips() throws {
+        var settings = AppSettings()
+        settings.alertStyle = .popup
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.alertStyle, .popup)
+    }
+
+    func testEffectiveAlertStyle() {
+        XCTAssertEqual(AlertStyle.effective(preferred: .notification, notificationsAllowed: true), .notification)
+        XCTAssertEqual(AlertStyle.effective(preferred: .notification, notificationsAllowed: false), .popup)
+        XCTAssertEqual(AlertStyle.effective(preferred: .popup, notificationsAllowed: true), .popup)
+        XCTAssertEqual(AlertStyle.effective(preferred: .popup, notificationsAllowed: false), .popup)
+    }
+
+    func testAlertStyleLabels() {
+        XCTAssertEqual(Set(AlertStyle.allCases.map(\.label)).count, AlertStyle.allCases.count)
     }
 }

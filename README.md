@@ -16,6 +16,7 @@ This is useful if you want to make sure your VPN is active, or that your traffic
 - **Unconfigured network handling** — choose to alert or allow networks without configured IP ranges
 - **Configurable check interval** — set how often the IP is verified (default: 60 seconds)
 - **Custom IP lookup service** — use ipify, icanhazip or ident.me (IPv4-only endpoints), or any custom URL (with optional auth token)
+- **Notifications or popups** for mismatches, restorations and missing location access (popups are used if notifications are turned off)
 - **Optional IP display** in the menu bar
 - **Launch at login** support
 

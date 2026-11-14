@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import UserNotifications
 
 struct GeneralSettingsView: View {
     @ObservedObject var networkManager: NetworkManager
@@ -7,6 +8,7 @@ struct GeneralSettingsView: View {
     @State private var selectedURLOption: String = AppSettings.predefinedURLs[0].name
     @State private var customURL: String = ""
     @State private var authToken: String = ""
+    @State private var notificationsDenied = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,9 +67,21 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
 
+                    Picker("Alert style", selection: $settings.alertStyle) {
+                        ForEach(AlertStyle.allCases, id: \.self) { style in
+                            Text(style.label).tag(style)
+                        }
+                    }
+
+                    if settings.alertStyle == .notification && notificationsDenied {
+                        Text("Notifications are turned off for Network Watcher in System Settings, so popup windows are used instead.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+
                     Toggle("Mute alerts", isOn: $settings.muteAlerts)
 
-                    Text("Suppress popup alerts for IP mismatches and restorations. The menu bar icon will still update.")
+                    Text("Suppress alerts for IP mismatches and restorations. The menu bar icon will still update.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 } header: {
@@ -106,6 +120,10 @@ struct GeneralSettingsView: View {
             settings.launchAtLogin = SMAppService.mainApp.status == .enabled
             initURLSelection()
             authToken = KeychainService.load(key: "ipLookupAuthToken") ?? ""
+        }
+        .task {
+            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            notificationsDenied = status == .denied
         }
     }
 

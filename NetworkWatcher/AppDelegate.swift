@@ -25,8 +25,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Settings the timer and status were last configured from, to tell what a change affects.
     private var appliedSettings: AppSettings?
 
+    private let modalPresenter = ModalAlertPresenter()
+    private lazy var notificationPresenter = NotificationAlertPresenter { [weak self] in self?.openSettings() }
+    private var notificationsAllowed = false
+
     func applicationDidFinishLaunching(_: Notification) {
         networkMonitor.requestLocationPermission()
+        // Created up front so it is the notification delegate before any notification is clicked.
+        _ = notificationPresenter
         setupStatusItem()
 
         networkMonitor.onNetworkChange = { [weak self] in
@@ -53,6 +59,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateMenuBarIPDisplay(showIP: settings.showIPInMenuBar)
         if change.restartTimer {
             restartTimer(intervalSeconds: settings.checkIntervalSeconds)
+        }
+        if change.requestNotificationPermission {
+            requestNotificationPermission()
         }
         if change.recheck {
             Task { await performIPCheck() }
@@ -320,67 +329,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func present(_ alert: StatusAlert) {
-        switch alert {
-        case let .mismatch(ip, networkName):
-            showMismatchAlert(ip: ip, networkName: networkName)
-        case let .unconfigured(ip, networkName):
-            showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
-        case let .restored(ip, networkName):
-            showRestoredAlert(ip: ip, networkName: networkName)
-        case .locationPermissionNeeded:
-            showLocationPermissionAlert()
+        let content = AlertContent(alert)
+        Task { @MainActor in
+            // Re-read each time: the user may have allowed or blocked notifications in System Settings.
+            notificationsAllowed = await notificationPresenter.isAuthorized()
+            let style = AlertStyle.effective(
+                preferred: networkManager.settings.alertStyle,
+                notificationsAllowed: notificationsAllowed
+            )
+            switch style {
+            case .notification: notificationPresenter.present(content)
+            case .popup: modalPresenter.present(content)
+            }
         }
     }
 
-    private func showLocationPermissionAlert() {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "Location Access Needed"
-        alert.informativeText = "macOS only reveals the Wi-Fi network name to apps with location access, so Network Watcher can't tell which network you're on.\n\nAllow Network Watcher in Privacy & Security > Location Services."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open Settings")
-        alert.addButton(withTitle: "Not Now")
-        if alert.runModal() == .alertFirstButtonReturn {
-            openLocationSettings()
+    private func requestNotificationPermission() {
+        Task { @MainActor in
+            notificationsAllowed = await notificationPresenter.requestAuthorization()
         }
     }
 
     @objc private func openLocationSettings() {
         NSWorkspace.shared.open(NetworkMonitor.locationSettingsURL)
-    }
-
-    private func showMismatchAlert(ip: String, networkName: String) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "IP Address Mismatch"
-        alert.informativeText = "Your current external IP (\(ip)) does not match the expected IP range for network \"\(networkName)\".\n\nIf this is unexpected, check that the allowed IP list for this network is correct in Settings."
-        alert.alertStyle = .critical
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
-    private func showRestoredAlert(ip: String, networkName: String) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "IP Address Restored"
-        alert.informativeText = "Your external IP (\(ip)) on \"\(networkName)\" now matches the expected range."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
-    private func showUnconfiguredNetworkAlert(ip: String, networkName: String) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "Unconfigured Network"
-        alert.informativeText = "You are connected to \"\(networkName)\" with external IP \(ip), but this network has no allowed IPs configured.\n\nYou can add this network and its expected IPs in Settings, or enable \"Allow unconfigured networks\" in General settings to skip this warning."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 }
 
