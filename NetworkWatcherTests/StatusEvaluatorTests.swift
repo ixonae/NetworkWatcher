@@ -127,4 +127,60 @@ final class StatusEvaluatorTests: XCTestCase {
         XCTAssertNil(NetworkManager.network(forActiveIdentifiers: ["CafeWiFi"], in: [home]))
         XCTAssertNil(NetworkManager.network(forActiveIdentifiers: [], in: [home]))
     }
+
+    // MARK: - Exact matches beat the catch-all
+
+    private let catchAll = NetworkEntry(
+        networkIdentifier: "*",
+        allowedIPRanges: [AllowedIPEntry(range: TestIP.cidr172_16)]
+    )
+    private let ethernet = NetworkEntry(
+        networkIdentifier: "Ethernet",
+        allowedIPRanges: [AllowedIPEntry(range: TestIP.cidr10_8)]
+    )
+
+    func testExactMatchOnLaterIdentifierBeatsCatchAll() {
+        let result = NetworkManager.network(forActiveIdentifiers: ["CafeWiFi", "Ethernet"], in: [catchAll, ethernet])
+        XCTAssertEqual(result?.networkIdentifier, "Ethernet")
+    }
+
+    func testExactMatchBeatsCatchAllRegardlessOfListOrder() {
+        let before = NetworkManager.network(forActiveIdentifiers: ["Ethernet"], in: [catchAll, ethernet])
+        let after = NetworkManager.network(forActiveIdentifiers: ["Ethernet"], in: [ethernet, catchAll])
+        XCTAssertEqual(before?.networkIdentifier, "Ethernet")
+        XCTAssertEqual(after?.networkIdentifier, "Ethernet")
+    }
+
+    func testEarlierExactMatchWins() {
+        let result = NetworkManager.network(forActiveIdentifiers: ["HomeWiFi", "Ethernet"], in: [ethernet, home])
+        XCTAssertEqual(result?.networkIdentifier, "HomeWiFi")
+    }
+
+    func testCatchAllUsedWhenNoExactMatch() {
+        let result = NetworkManager.network(forActiveIdentifiers: ["CafeWiFi"], in: [home, catchAll])
+        XCTAssertEqual(result?.networkIdentifier, "*")
+    }
+
+    func testCatchAllAppliesWithNoActiveIdentifiers() {
+        XCTAssertEqual(NetworkManager.network(forActiveIdentifiers: [], in: [catchAll])?.networkIdentifier, "*")
+    }
+
+    func testUnconfiguredWiFiWithConfiguredEthernetUsesEthernetRules() {
+        let result = evaluator(networks: [catchAll, ethernet])
+            .evaluate(ip: TestIP.private10, activeIdentifiers: ["CafeWiFi", "Ethernet"], alertState: AlertState())
+        XCTAssertEqual(result.status, .match)
+    }
+
+    func testCatchAllMismatchIsReportedUnderActiveNetworkName() {
+        let result = evaluator(networks: [catchAll])
+            .evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: AlertState())
+        XCTAssertEqual(result.alert, .mismatch(ip: TestIP.dns, networkName: "CafeWiFi"))
+        XCTAssertEqual(result.alertState.acknowledgedNetwork, "CafeWiFi")
+    }
+
+    func testExactMatchIsReportedUnderConfiguredName() {
+        let result = evaluator()
+            .evaluate(ip: TestIP.dns, activeIdentifiers: ["homewifi"], alertState: AlertState())
+        XCTAssertEqual(result.alert, .mismatch(ip: TestIP.dns, networkName: "HomeWiFi"))
+    }
 }

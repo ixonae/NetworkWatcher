@@ -45,14 +45,17 @@ class NetworkManager: ObservableObject {
         }) ?? networks.first(where: { $0.networkIdentifier == "*" })
     }
 
-    /// The configured network for the first active identifier that has one.
+    /// The configured network for the active connections: an exact match on any active identifier
+    /// (in order) wins over the "*" catch-all, which only applies when no identifier matches exactly.
     static func network(forActiveIdentifiers identifiers: [String], in networks: [NetworkEntry]) -> NetworkEntry? {
         for identifier in identifiers {
-            if let network = network(forIdentifier: identifier, in: networks) {
+            if let network = networks.first(where: {
+                $0.networkIdentifier != "*" && $0.networkIdentifier.lowercased() == identifier.lowercased()
+            }) {
                 return network
             }
         }
-        return nil
+        return networks.first(where: { $0.networkIdentifier == "*" })
     }
 
     // MARK: - Settings

@@ -36,7 +36,8 @@ struct StatusEvaluator {
 
     func evaluate(ip: String, activeIdentifiers: [String], alertState: AlertState) -> StatusEvaluation {
         let matchedNetwork = NetworkManager.network(forActiveIdentifiers: activeIdentifiers, in: networks)
-        let networkName = matchedNetwork?.networkIdentifier
+        // A catch-all match is reported under the real network name, not "*".
+        let networkName = matchedNetwork.flatMap { $0.networkIdentifier == "*" ? nil : $0.networkIdentifier }
             ?? activeIdentifiers.first
             ?? "Unknown"
 
