@@ -20,23 +20,75 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Why the last check failed, shown in the menu; nil after a successful check.
     private var lastFailureReason: String?
     private var lastCheckTime: Date?
+    /// Last IP the lookup returned, so rule changes can be re-evaluated without a new request.
+    private var lastFetchedIP: String?
+    /// Settings the timer and status were last configured from, to tell what a change affects.
+    private var appliedSettings: AppSettings?
+
+    private let modalPresenter = ModalAlertPresenter()
+    private lazy var notificationPresenter = NotificationAlertPresenter { [weak self] in self?.openSettings() }
+    private var notificationsAllowed = false
 
     func applicationDidFinishLaunching(_: Notification) {
         networkMonitor.requestLocationPermission()
+        // Created up front so it is the notification delegate before any notification is clicked.
+        _ = notificationPresenter
         setupStatusItem()
-        startChecking()
 
         networkMonitor.onNetworkChange = { [weak self] in
             Task { await self?.performIPCheck() }
         }
         networkMonitor.startMonitoring()
 
+        // @Published emits before the property changes, so always use the emitted value.
         networkManager.$settings
-            .sink { [weak self] settings in
-                self?.updateMenuBarIPDisplay()
-                self?.restartTimer()
-            }
+            .sink { [weak self] settings in self?.settingsDidChange(settings) }
             .store(in: &cancellables)
+        networkManager.$networks
+            .dropFirst()
+            .sink { [weak self] networks in self?.reevaluateStatus(networks: networks) }
+            .store(in: &cancellables)
+
+        Task { await performIPCheck() }
+    }
+
+    private func settingsDidChange(_ settings: AppSettings) {
+        let change = SettingsChange.between(appliedSettings, settings)
+        appliedSettings = settings
+
+        updateMenuBarIPDisplay(showIP: settings.showIPInMenuBar)
+        if change.restartTimer {
+            restartTimer(intervalSeconds: settings.checkIntervalSeconds)
+        }
+        if change.requestNotificationPermission {
+            requestNotificationPermission()
+        }
+        if change.recheck {
+            Task { await performIPCheck() }
+        } else if change.reevaluate {
+            reevaluateStatus(settings: settings)
+        }
+    }
+
+    /// Re-applies the rules to the last fetched IP after the user edits them, without a new lookup.
+    /// No alert is shown for a change the user just made, but the alert state is updated so the
+    /// next periodic check doesn't raise one about it either.
+    private func reevaluateStatus(networks: [NetworkEntry]? = nil, settings: AppSettings? = nil) {
+        guard let ip = lastFetchedIP else { return }
+        let evaluator = StatusEvaluator(
+            networks: networks ?? networkManager.networks,
+            settings: settings ?? networkManager.settings
+        )
+        let evaluation = evaluator.evaluate(
+            ip: ip,
+            activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
+            alertState: alertState,
+            ssidBlockedByPermission: networkMonitor.isSSIDBlockedByPermission
+        )
+        ipStatus = evaluation.status
+        alertState = evaluation.alertState
+        updateStatusIcon()
+        refreshMenu()
     }
 
     // MARK: - Status Item
@@ -76,9 +128,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateMenuBarIPDisplay()
     }
 
-    private func updateMenuBarIPDisplay() {
+    private func updateMenuBarIPDisplay(showIP: Bool? = nil) {
         guard let button = statusItem.button else { return }
-        if networkManager.settings.showIPInMenuBar {
+        if showIP ?? networkManager.settings.showIPInMenuBar {
             button.title = " \(currentIP)"
         } else {
             button.title = ""
@@ -179,7 +231,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         var settings = networkManager.settings
         settings.showIPInMenuBar.toggle()
         networkManager.updateSettings(settings)
-        updateMenuBarIPDisplay()
         refreshMenu()
     }
 
@@ -224,14 +275,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - IP Checking
 
-    private func startChecking() {
-        restartTimer()
-        Task { await performIPCheck() }
-    }
-
-    private func restartTimer() {
+    private func restartTimer(intervalSeconds: Int) {
         timer?.invalidate()
-        let interval = TimeInterval(max(networkManager.settings.checkIntervalSeconds, 5))
+        let interval = TimeInterval(AppSettings.clampedInterval(intervalSeconds))
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { await self?.performIPCheck(trigger: .timer) }
         }
@@ -247,14 +293,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let ip = try await ipChecker.fetchExternalIP(from: networkManager.settings.ipLookupURL, authToken: authToken)
             guard checkCoordinator.isCurrent(generation) else { return }
             currentIP = ip
+            lastFetchedIP = ip
             lastFailureReason = nil
             lastCheckTime = Date()
 
-            let evaluator = StatusEvaluator(
-                networks: networkManager.networks,
-                allowUnconfiguredNetworks: networkManager.settings.allowUnconfiguredNetworks,
-                muteAlerts: networkManager.settings.muteAlerts
-            )
+            let evaluator = StatusEvaluator(networks: networkManager.networks, settings: networkManager.settings)
             let evaluation = evaluator.evaluate(
                 ip: ip,
                 activeIdentifiers: networkMonitor.activeNetworkIdentifiers(),
@@ -286,67 +329,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func present(_ alert: StatusAlert) {
-        switch alert {
-        case let .mismatch(ip, networkName):
-            showMismatchAlert(ip: ip, networkName: networkName)
-        case let .unconfigured(ip, networkName):
-            showUnconfiguredNetworkAlert(ip: ip, networkName: networkName)
-        case let .restored(ip, networkName):
-            showRestoredAlert(ip: ip, networkName: networkName)
-        case .locationPermissionNeeded:
-            showLocationPermissionAlert()
+        let content = AlertContent(alert)
+        Task { @MainActor in
+            // Re-read each time: the user may have allowed or blocked notifications in System Settings.
+            notificationsAllowed = await notificationPresenter.isAuthorized()
+            let style = AlertStyle.effective(
+                preferred: networkManager.settings.alertStyle,
+                notificationsAllowed: notificationsAllowed
+            )
+            switch style {
+            case .notification: notificationPresenter.present(content)
+            case .popup: modalPresenter.present(content)
+            }
         }
     }
 
-    private func showLocationPermissionAlert() {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "Location Access Needed"
-        alert.informativeText = "macOS only reveals the Wi-Fi network name to apps with location access, so Network Watcher can't tell which network you're on.\n\nAllow Network Watcher in Privacy & Security > Location Services."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Open Settings")
-        alert.addButton(withTitle: "Not Now")
-        if alert.runModal() == .alertFirstButtonReturn {
-            openLocationSettings()
+    private func requestNotificationPermission() {
+        Task { @MainActor in
+            notificationsAllowed = await notificationPresenter.requestAuthorization()
         }
     }
 
     @objc private func openLocationSettings() {
         NSWorkspace.shared.open(NetworkMonitor.locationSettingsURL)
-    }
-
-    private func showMismatchAlert(ip: String, networkName: String) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "IP Address Mismatch"
-        alert.informativeText = "Your current external IP (\(ip)) does not match the expected IP range for network \"\(networkName)\".\n\nIf this is unexpected, check that the allowed IP list for this network is correct in Settings."
-        alert.alertStyle = .critical
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
-    private func showRestoredAlert(ip: String, networkName: String) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "IP Address Restored"
-        alert.informativeText = "Your external IP (\(ip)) on \"\(networkName)\" now matches the expected range."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
-    private func showUnconfiguredNetworkAlert(ip: String, networkName: String) {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        alert.messageText = "Unconfigured Network"
-        alert.informativeText = "You are connected to \"\(networkName)\" with external IP \(ip), but this network has no allowed IPs configured.\n\nYou can add this network and its expected IPs in Settings, or enable \"Allow unconfigured networks\" in General settings to skip this warning."
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 }
 

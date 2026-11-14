@@ -81,7 +81,6 @@ final class ModelTests: XCTestCase {
         var settings = AppSettings()
         settings.checkIntervalSeconds = 30
         settings.showIPInMenuBar = true
-        settings.launchAtLogin = true
         settings.allowUnconfiguredNetworks = true
         settings.muteAlerts = true
         settings.ipLookupURL = "https://custom.example.com/ip"
@@ -91,7 +90,6 @@ final class ModelTests: XCTestCase {
 
         XCTAssertEqual(decoded.checkIntervalSeconds, 30)
         XCTAssertTrue(decoded.showIPInMenuBar)
-        XCTAssertTrue(decoded.launchAtLogin)
         XCTAssertTrue(decoded.allowUnconfiguredNetworks)
         XCTAssertTrue(decoded.muteAlerts)
         XCTAssertEqual(decoded.ipLookupURL, "https://custom.example.com/ip")
@@ -168,6 +166,15 @@ final class ModelTests: XCTestCase {
         XCTAssertFalse(decoded.muteAlerts)
     }
 
+    func testAppSettingsIgnoresLegacyLaunchAtLogin() throws {
+        let json = #"{"checkIntervalSeconds":30,"launchAtLogin":true,"muteAlerts":true}"#
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8))
+        XCTAssertEqual(decoded.checkIntervalSeconds, 30)
+        XCTAssertTrue(decoded.muteAlerts)
+        let reencoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(decoded)) as? [String: Any]
+        XCTAssertNil(reencoded?["launchAtLogin"])
+    }
+
     func testAppSettingsDecodesEmptyJSON() throws {
         let json = "{}"
         let data = json.data(using: .utf8)!
@@ -175,7 +182,6 @@ final class ModelTests: XCTestCase {
 
         XCTAssertEqual(decoded.checkIntervalSeconds, 60)
         XCTAssertFalse(decoded.showIPInMenuBar)
-        XCTAssertFalse(decoded.launchAtLogin)
         XCTAssertFalse(decoded.allowUnconfiguredNetworks)
         XCTAssertFalse(decoded.muteAlerts)
         XCTAssertEqual(decoded.ipLookupURL, "https://api.ipify.org?format=text")
@@ -198,7 +204,6 @@ final class ModelTests: XCTestCase {
         let settings = AppSettings()
         XCTAssertEqual(settings.checkIntervalSeconds, 60)
         XCTAssertFalse(settings.showIPInMenuBar)
-        XCTAssertFalse(settings.launchAtLogin)
         XCTAssertFalse(settings.allowUnconfiguredNetworks)
         XCTAssertFalse(settings.muteAlerts)
         XCTAssertEqual(settings.ipLookupURL, "https://api.ipify.org?format=text")
@@ -246,5 +251,149 @@ final class ModelTests: XCTestCase {
         }
         XCTAssertEqual(try decodeSettings(ipLookupURL: "https://icanhazip.com/custom").ipLookupURL, "https://icanhazip.com/custom")
         XCTAssertEqual(try decodeSettings(ipLookupURL: "https://ip.example.com").ipLookupURL, "https://ip.example.com")
+    }
+
+    // MARK: - SettingsChange
+
+    func testFirstSettingsUpdateStartsTimerAndRequestsNotificationPermission() {
+        XCTAssertEqual(
+            SettingsChange.between(nil, AppSettings()),
+            SettingsChange(restartTimer: true, recheck: false, reevaluate: false, requestNotificationPermission: true)
+        )
+    }
+
+    func testFirstSettingsUpdateWithPopupsSkipsNotificationPermission() {
+        var settings = AppSettings()
+        settings.alertStyle = .popup
+        XCTAssertFalse(SettingsChange.between(nil, settings).requestNotificationPermission)
+    }
+
+    func testSwitchingToNotificationsRequestsPermission() {
+        var old = AppSettings()
+        old.alertStyle = .popup
+        XCTAssertTrue(SettingsChange.between(old, AppSettings()).requestNotificationPermission)
+    }
+
+    func testSwitchingToPopupsOrKeepingStyleDoesNotRequestPermission() {
+        var popup = AppSettings()
+        popup.alertStyle = .popup
+        XCTAssertFalse(SettingsChange.between(AppSettings(), popup).requestNotificationPermission)
+        XCTAssertFalse(SettingsChange.between(AppSettings(), AppSettings()).requestNotificationPermission)
+    }
+
+    func testUnchangedSettingsNeedNothing() {
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), AppSettings()),
+            SettingsChange(restartTimer: false, recheck: false, reevaluate: false)
+        )
+    }
+
+    func testIntervalChangeRestartsTimer() {
+        var new = AppSettings()
+        new.checkIntervalSeconds = 120
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), new),
+            SettingsChange(restartTimer: true, recheck: false, reevaluate: false)
+        )
+    }
+
+    func testLookupURLChangeTriggersRecheck() {
+        var new = AppSettings()
+        new.ipLookupURL = "https://ip.example.com"
+        XCTAssertTrue(SettingsChange.between(AppSettings(), new).recheck)
+    }
+
+    func testAllowUnconfiguredChangeTriggersReevaluation() {
+        var new = AppSettings()
+        new.allowUnconfiguredNetworks = true
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), new),
+            SettingsChange(restartTimer: false, recheck: false, reevaluate: true)
+        )
+    }
+
+    func testDisplayOnlyChangesNeedNothing() {
+        var new = AppSettings()
+        new.showIPInMenuBar = true
+        new.muteAlerts = true
+        XCTAssertEqual(
+            SettingsChange.between(AppSettings(), new),
+            SettingsChange(restartTimer: false, recheck: false, reevaluate: false)
+        )
+    }
+
+    // MARK: - Alert style
+
+    func testAlertStyleDefaultsToNotification() {
+        XCTAssertEqual(AppSettings().alertStyle, .notification)
+    }
+
+    func testAlertStyleMissingFromStoredSettingsDefaultsToNotification() throws {
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"muteAlerts":true}"#.utf8))
+        XCTAssertEqual(decoded.alertStyle, .notification)
+    }
+
+    func testUnknownAlertStyleDefaultsToNotification() throws {
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"alertStyle":"hologram"}"#.utf8))
+        XCTAssertEqual(decoded.alertStyle, .notification)
+    }
+
+    func testAlertStyleRoundTrips() throws {
+        var settings = AppSettings()
+        settings.alertStyle = .popup
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.alertStyle, .popup)
+    }
+
+    func testEffectiveAlertStyle() {
+        XCTAssertEqual(AlertStyle.effective(preferred: .notification, notificationsAllowed: true), .notification)
+        XCTAssertEqual(AlertStyle.effective(preferred: .notification, notificationsAllowed: false), .popup)
+        XCTAssertEqual(AlertStyle.effective(preferred: .popup, notificationsAllowed: true), .popup)
+        XCTAssertEqual(AlertStyle.effective(preferred: .popup, notificationsAllowed: false), .popup)
+    }
+
+    func testAlertStyleLabels() {
+        XCTAssertEqual(Set(AlertStyle.allCases.map(\.label)).count, AlertStyle.allCases.count)
+    }
+
+    // MARK: - Check interval
+
+    private func decodeInterval(_ value: Int) throws -> Int {
+        let json = #"{"checkIntervalSeconds":\#(value)}"#
+        return try JSONDecoder().decode(AppSettings.self, from: Data(json.utf8)).checkIntervalSeconds
+    }
+
+    func testIntervalRangeBounds() {
+        XCTAssertEqual(AppSettings.checkIntervalRange, 5...3600)
+        XCTAssertTrue(AppSettings.checkIntervalRange.contains(AppSettings().checkIntervalSeconds))
+    }
+
+    func testIsValidInterval() {
+        XCTAssertTrue(AppSettings.isValidInterval(5))
+        XCTAssertTrue(AppSettings.isValidInterval(60))
+        XCTAssertTrue(AppSettings.isValidInterval(3600))
+        XCTAssertFalse(AppSettings.isValidInterval(4))
+        XCTAssertFalse(AppSettings.isValidInterval(0))
+        XCTAssertFalse(AppSettings.isValidInterval(-1))
+        XCTAssertFalse(AppSettings.isValidInterval(3601))
+    }
+
+    func testClampedInterval() {
+        XCTAssertEqual(AppSettings.clampedInterval(0), 5)
+        XCTAssertEqual(AppSettings.clampedInterval(-10), 5)
+        XCTAssertEqual(AppSettings.clampedInterval(30), 30)
+        XCTAssertEqual(AppSettings.clampedInterval(99999), 3600)
+    }
+
+    func testOutOfRangeStoredIntervalsAreClampedOnDecode() throws {
+        XCTAssertEqual(try decodeInterval(0), 5)
+        XCTAssertEqual(try decodeInterval(-1), 5)
+        XCTAssertEqual(try decodeInterval(99999), 3600)
+    }
+
+    func testValidStoredIntervalsPassThrough() throws {
+        XCTAssertEqual(try decodeInterval(5), 5)
+        XCTAssertEqual(try decodeInterval(120), 120)
+        XCTAssertEqual(try decodeInterval(3600), 3600)
     }
 }

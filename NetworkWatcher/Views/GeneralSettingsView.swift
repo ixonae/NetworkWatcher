@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import UserNotifications
 
 struct GeneralSettingsView: View {
     @ObservedObject var networkManager: NetworkManager
@@ -7,6 +8,11 @@ struct GeneralSettingsView: View {
     @State private var selectedURLOption: String = AppSettings.predefinedURLs[0].name
     @State private var customURL: String = ""
     @State private var authToken: String = ""
+    @State private var notificationsDenied = false
+    @State private var launchAtLoginEnabled = false
+    @State private var launchAtLoginNeedsApproval = false
+    @State private var launchAtLoginError: String?
+    private let launchAtLogin = LaunchAtLogin()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,6 +27,12 @@ struct GeneralSettingsView: View {
                             Text("seconds")
                                 .foregroundStyle(.secondary)
                         }
+                    }
+
+                    if !isIntervalValid {
+                        Text("Enter a value between \(AppSettings.checkIntervalRange.lowerBound) and \(AppSettings.checkIntervalRange.upperBound) seconds.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
 
                     Picker("Lookup service", selection: $selectedURLOption) {
@@ -65,9 +77,21 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
 
+                    Picker("Alert style", selection: $settings.alertStyle) {
+                        ForEach(AlertStyle.allCases, id: \.self) { style in
+                            Text(style.label).tag(style)
+                        }
+                    }
+
+                    if settings.alertStyle == .notification && notificationsDenied {
+                        Text("Notifications are turned off for Network Watcher in System Settings, so popup windows are used instead.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+
                     Toggle("Mute alerts", isOn: $settings.muteAlerts)
 
-                    Text("Suppress popup alerts for IP mismatches and restorations. The menu bar icon will still update.")
+                    Text("Suppress alerts for IP mismatches and restorations. The menu bar icon will still update.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 } header: {
@@ -75,10 +99,31 @@ struct GeneralSettingsView: View {
                 }
 
                 Section {
-                    Toggle("Launch at login", isOn: $settings.launchAtLogin)
-                        .onChange(of: settings.launchAtLogin) { _, newValue in
-                            updateLaunchAtLogin(newValue)
+                    Toggle("Launch at login", isOn: Binding(
+                        get: { launchAtLoginEnabled },
+                        set: { updateLaunchAtLogin($0) }
+                    ))
+
+                    if let launchAtLoginError {
+                        Text(launchAtLoginError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    } else if launchAtLoginNeedsApproval {
+                        HStack {
+                            Text("Waiting for approval in System Settings > Login Items.")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                            Spacer()
+                            Button("Open Login Items") {
+                                SMAppService.openSystemSettingsLoginItems()
+                            }
+                            .controlSize(.small)
                         }
+                    } else {
+                        Text("Applies immediately.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 } header: {
                     Text("System")
                 }
@@ -98,15 +143,24 @@ struct GeneralSettingsView: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .controlSize(.large)
+                .disabled(!isIntervalValid)
             }
             .padding()
         }
         .onAppear {
             settings = networkManager.settings
-            settings.launchAtLogin = SMAppService.mainApp.status == .enabled
+            refreshLaunchAtLogin()
             initURLSelection()
             authToken = KeychainService.load(key: "ipLookupAuthToken") ?? ""
         }
+        .task {
+            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            notificationsDenied = status == .denied
+        }
+    }
+
+    private var isIntervalValid: Bool {
+        AppSettings.isValidInterval(settings.checkIntervalSeconds)
     }
 
     private func initURLSelection() {
@@ -119,15 +173,12 @@ struct GeneralSettingsView: View {
     }
 
     private func updateLaunchAtLogin(_ enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            print("Failed to update launch at login: \(error)")
-            settings.launchAtLogin = !enabled
-        }
+        launchAtLoginError = launchAtLogin.setEnabled(enabled)
+        refreshLaunchAtLogin()
+    }
+
+    private func refreshLaunchAtLogin() {
+        launchAtLoginEnabled = launchAtLogin.isEnabled
+        launchAtLoginNeedsApproval = launchAtLogin.requiresApproval
     }
 }

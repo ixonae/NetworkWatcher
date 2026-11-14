@@ -45,6 +45,13 @@
 		C10000007 /* CheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000006 /* CheckCoordinator.swift */; };
 		C10000008 /* CheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000006 /* CheckCoordinator.swift */; };
 		C1000000A /* CheckCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000009 /* CheckCoordinatorTests.swift */; };
+		C1000000C /* AlertContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000B /* AlertContent.swift */; };
+		C1000000D /* AlertContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000B /* AlertContent.swift */; };
+		C1000000F /* AlertPresenters.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000000E /* AlertPresenters.swift */; };
+		C10000011 /* AlertContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000010 /* AlertContentTests.swift */; };
+		C10000013 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012 /* LaunchAtLogin.swift */; };
+		C10000014 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012 /* LaunchAtLogin.swift */; };
+		C10000016 /* LaunchAtLoginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000015 /* LaunchAtLoginTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,6 +102,11 @@
 		C10000004 /* StatusEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEvaluatorTests.swift; sourceTree = "<group>"; };
 		C10000006 /* CheckCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckCoordinator.swift; sourceTree = "<group>"; };
 		C10000009 /* CheckCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckCoordinatorTests.swift; sourceTree = "<group>"; };
+		C1000000B /* AlertContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertContent.swift; sourceTree = "<group>"; };
+		C1000000E /* AlertPresenters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenters.swift; sourceTree = "<group>"; };
+		C10000010 /* AlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertContentTests.swift; sourceTree = "<group>"; };
+		C10000012 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
+		C10000015 /* LaunchAtLoginTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -181,6 +193,9 @@
 		A10000044 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C10000012 /* LaunchAtLogin.swift */,
+				C1000000E /* AlertPresenters.swift */,
+				C1000000B /* AlertContent.swift */,
 				C10000006 /* CheckCoordinator.swift */,
 				C10000001 /* StatusEvaluator.swift */,
 				A10000015 /* IPChecker.swift */,
@@ -208,6 +223,8 @@
 		B10000040 /* NetworkWatcherTests */ = {
 			isa = PBXGroup;
 			children = (
+				C10000015 /* LaunchAtLoginTests.swift */,
+				C10000010 /* AlertContentTests.swift */,
 				C10000009 /* CheckCoordinatorTests.swift */,
 				C10000004 /* StatusEvaluatorTests.swift */,
 				B10000017 /* TestConstants.swift */,
@@ -312,6 +329,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000013 /* LaunchAtLogin.swift in Sources */,
+				C1000000F /* AlertPresenters.swift in Sources */,
+				C1000000C /* AlertContent.swift in Sources */,
 				C10000007 /* CheckCoordinator.swift in Sources */,
 				C10000002 /* StatusEvaluator.swift in Sources */,
 				A10000001 /* NetworkWatcherApp.swift in Sources */,
@@ -336,6 +356,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000016 /* LaunchAtLoginTests.swift in Sources */,
+				C10000014 /* LaunchAtLogin.swift in Sources */,
+				C10000011 /* AlertContentTests.swift in Sources */,
+				C1000000D /* AlertContent.swift in Sources */,
 				C1000000A /* CheckCoordinatorTests.swift in Sources */,
 				C10000008 /* CheckCoordinator.swift in Sources */,
 				C10000005 /* StatusEvaluatorTests.swift in Sources */,

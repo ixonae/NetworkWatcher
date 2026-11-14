@@ -37,6 +37,20 @@ struct StatusEvaluator {
     var allowUnconfiguredNetworks: Bool
     var muteAlerts: Bool
 
+    init(networks: [NetworkEntry], allowUnconfiguredNetworks: Bool, muteAlerts: Bool) {
+        self.networks = networks
+        self.allowUnconfiguredNetworks = allowUnconfiguredNetworks
+        self.muteAlerts = muteAlerts
+    }
+
+    init(networks: [NetworkEntry], settings: AppSettings) {
+        self.init(
+            networks: networks,
+            allowUnconfiguredNetworks: settings.allowUnconfiguredNetworks,
+            muteAlerts: settings.muteAlerts
+        )
+    }
+
     /// - Parameter ssidBlockedByPermission: Wi-Fi is on but macOS hides the SSID because the app
     ///   lacks location permission, so the active identifiers are missing the Wi-Fi network.
     func evaluate(
