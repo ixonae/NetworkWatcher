@@ -207,8 +207,16 @@ final class StatusEvaluatorTests: XCTestCase {
         XCTAssertTrue(result.alertState.locationAlertShown)
     }
 
-    func testBlockedSSIDWithExactWiredMatchEvaluatesNormally() {
+    func testBlockedSSIDWithWiredMatchAndWiFiRulesAsksForPermission() {
+        // A Wi-Fi rule outranks the wired one, so the hidden SSID could change the outcome.
         let result = evaluator(networks: [home, ethernet])
+            .evaluate(ip: TestIP.private10, activeIdentifiers: ["Ethernet"], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertEqual(result.status, .unknown)
+        XCTAssertEqual(result.alert, .locationPermissionNeeded)
+    }
+
+    func testBlockedSSIDWithWiredMatchAndNoWiFiRulesEvaluatesNormally() {
+        let result = evaluator(networks: [ethernet, catchAll])
             .evaluate(ip: TestIP.private10, activeIdentifiers: ["Ethernet"], alertState: AlertState(), ssidBlockedByPermission: true)
         XCTAssertEqual(result.status, .match)
         XCTAssertNil(result.alert)

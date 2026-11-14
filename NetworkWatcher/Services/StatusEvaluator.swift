@@ -90,11 +90,11 @@ struct StatusEvaluator {
         return mismatched(.mismatch(ip: ip, networkName: networkName), networkName: networkName, alertState: alertState)
     }
 
-    /// Whether the missing SSID could change the outcome: nothing matched exactly, and either
-    /// nothing matched at all or some rule is keyed on a Wi-Fi name.
+    /// Whether the missing SSID could change the outcome. A Wi-Fi rule takes priority over wired and
+    /// catch-all ones, so unless the match is itself a Wi-Fi rule, any configured Wi-Fi rule might apply.
     private func needsSSID(_ matchedNetwork: NetworkEntry?) -> Bool {
         guard let matchedNetwork else { return true }
-        return matchedNetwork.isCatchAll && networks.contains(where: \.isWiFiNetwork)
+        return !matchedNetwork.isWiFiNetwork && networks.contains(where: \.isWiFiNetwork)
     }
 
     private func matched(_ status: IPStatus, ip: String, networkName: String, alertState: AlertState) -> StatusEvaluation {

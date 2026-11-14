@@ -279,7 +279,8 @@ final class NetworkMonitorTests: XCTestCase {
 
     func testClassifyThunderboltBridge() {
         XCTAssertEqual(classify("bridge0", "Bridge", "Thunderbolt Bridge"), .thunderbolt)
-        XCTAssertEqual(classify("bridge1", "Bridge", ""), .thunderbolt)
+        // Other bridges (VMs, Internet Sharing) are not a wired network.
+        XCTAssertEqual(classify("bridge100", "Bridge", "Bridge"), .other("Bridge"))
     }
 
     func testClassifySkipsWiFiAndTunnels() {
@@ -393,6 +394,20 @@ final class NetworkMonitorTests: XCTestCase {
 
     private typealias Address = NetworkMonitor.InterfaceAddress
     private let upRunning = IFF_UP | IFF_RUNNING
+
+    func testIdleWiFiIsNotBlockedByPermission() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: true, ssid: nil, wifiActive: false))
+        XCTAssertTrue(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: true, ssid: nil, wifiActive: true))
+    }
+
+    func testLinkLocalOnlyInterfaceIsNotActive() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [
+            Address(name: "en5", flags: upRunning, family: AF_INET6, isLinkLocal: true),
+            Address(name: "en6", flags: upRunning, family: AF_INET6, isLinkLocal: true),
+            Address(name: "en6", flags: upRunning, family: AF_INET),
+        ])
+        XCTAssertEqual(names, ["en6"])
+    }
 
     func testInterfaceWithIPv4AddressIsActive() {
         let names = NetworkMonitor.activeInterfaceNames(from: [Address(name: "en1", flags: upRunning, family: AF_INET)])
