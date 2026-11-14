@@ -15,7 +15,8 @@ class IPChecker {
             throw IPCheckerError.invalidURL
         }
 
-        var request = URLRequest(url: url, timeoutInterval: Self.requestTimeout)
+        // Never answer from the URL cache: a stale IP would be judged against the current network.
+        var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: Self.requestTimeout)
         if let token = authToken, !token.isEmpty {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }

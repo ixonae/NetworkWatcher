@@ -51,11 +51,14 @@ final class NotificationAlertPresenter: NSObject, AlertPresenter, UNUserNotifica
         return status == .authorized || status == .provisional
     }
 
-    func present(_ content: AlertContent) {
-        if !content.supersedes.isEmpty {
-            center.removeDeliveredNotifications(withIdentifiers: content.supersedes)
-        }
+    /// Removes delivered and pending notifications that a newer alert has made obsolete.
+    func withdraw(_ identifiers: [String]) {
+        guard !identifiers.isEmpty else { return }
+        center.removeDeliveredNotifications(withIdentifiers: identifiers)
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+    }
 
+    func present(_ content: AlertContent) {
         let notification = UNMutableNotificationContent()
         notification.title = content.title
         notification.body = content.body
@@ -66,7 +69,7 @@ final class NotificationAlertPresenter: NSObject, AlertPresenter, UNUserNotifica
         let request = UNNotificationRequest(identifier: content.identifier, content: notification, trigger: nil)
         center.add(request) { error in
             if let error {
-                NSLog("NotificationAlertPresenter: failed to deliver \(content.identifier): \(error)")
+                Log.alerts.error("Failed to deliver notification \(content.identifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }

@@ -23,7 +23,7 @@ final class StatusEvaluatorTests: XCTestCase {
         )
     }
 
-    private let acknowledgedHome = AlertState(mismatchAcknowledged: true, acknowledgedNetwork: "HomeWiFi")
+    private let acknowledgedHome = AlertState(mismatchAcknowledged: true, acknowledgedNetwork: "HomeWiFi", mismatchPresented: true)
 
     // MARK: - Matching
 
@@ -66,10 +66,20 @@ final class StatusEvaluatorTests: XCTestCase {
         let result = evaluator(muted: true).evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
         XCTAssertEqual(result.status, .mismatch)
         XCTAssertNil(result.alert)
-        XCTAssertEqual(result.alertState, acknowledgedHome)
+        XCTAssertEqual(result.alertState, AlertState(mismatchAcknowledged: true, acknowledgedNetwork: "HomeWiFi"))
     }
 
     // MARK: - Restore
+
+    func testMatchAfterMutedMismatchDoesNotShowRestored() {
+        let muted = evaluator(muted: true).evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
+        XCTAssertTrue(muted.alertState.mismatchAcknowledged)
+        XCTAssertFalse(muted.alertState.mismatchPresented)
+
+        let result = evaluator().evaluate(ip: TestIP.private192_100, activeIdentifiers: ["HomeWiFi"], alertState: muted.alertState)
+        XCTAssertEqual(result.status, .match)
+        XCTAssertNil(result.alert)
+    }
 
     func testMatchAfterMismatchShowsRestored() {
         let result = evaluator().evaluate(ip: TestIP.private192_100, activeIdentifiers: ["HomeWiFi"], alertState: acknowledgedHome)
@@ -100,7 +110,7 @@ final class StatusEvaluatorTests: XCTestCase {
     }
 
     func testAllowedUnconfiguredAfterMismatchShowsRestored() {
-        let state = AlertState(mismatchAcknowledged: true, acknowledgedNetwork: "CafeWiFi")
+        let state = AlertState(mismatchAcknowledged: true, acknowledgedNetwork: "CafeWiFi", mismatchPresented: true)
         let result = evaluator(allowUnconfigured: true).evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: state)
         XCTAssertEqual(result.alert, .restored(ip: TestIP.dns, networkName: "CafeWiFi"))
     }
@@ -207,8 +217,16 @@ final class StatusEvaluatorTests: XCTestCase {
         XCTAssertTrue(result.alertState.locationAlertShown)
     }
 
-    func testBlockedSSIDWithExactWiredMatchEvaluatesNormally() {
+    func testBlockedSSIDWithWiredMatchAndWiFiRulesAsksForPermission() {
+        // A Wi-Fi rule outranks the wired one, so the hidden SSID could change the outcome.
         let result = evaluator(networks: [home, ethernet])
+            .evaluate(ip: TestIP.private10, activeIdentifiers: ["Ethernet"], alertState: AlertState(), ssidBlockedByPermission: true)
+        XCTAssertEqual(result.status, .unknown)
+        XCTAssertEqual(result.alert, .locationPermissionNeeded)
+    }
+
+    func testBlockedSSIDWithWiredMatchAndNoWiFiRulesEvaluatesNormally() {
+        let result = evaluator(networks: [ethernet, catchAll])
             .evaluate(ip: TestIP.private10, activeIdentifiers: ["Ethernet"], alertState: AlertState(), ssidBlockedByPermission: true)
         XCTAssertEqual(result.status, .match)
         XCTAssertNil(result.alert)
@@ -299,5 +317,14 @@ final class StatusEvaluatorTests: XCTestCase {
         let before = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: AlertState())
         let after = evaluator(allowUnconfigured: true).evaluate(ip: TestIP.dns, activeIdentifiers: ["CafeWiFi"], alertState: before.alertState)
         XCTAssertEqual(after.status, .match)
+    }
+
+    func testChangeBetweenUnconfiguredAndMismatchOnSameNetworkAlertsAgain() {
+        let first = evaluator(networks: [NetworkEntry(networkIdentifier: "HomeWiFi")])
+            .evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: AlertState())
+        XCTAssertEqual(first.alert, .unconfigured(ip: TestIP.dns, networkName: "HomeWiFi"))
+
+        let second = evaluator().evaluate(ip: TestIP.dns, activeIdentifiers: ["HomeWiFi"], alertState: first.alertState)
+        XCTAssertEqual(second.alert, .mismatch(ip: TestIP.dns, networkName: "HomeWiFi"))
     }
 }

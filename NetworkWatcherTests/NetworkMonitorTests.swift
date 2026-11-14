@@ -279,7 +279,8 @@ final class NetworkMonitorTests: XCTestCase {
 
     func testClassifyThunderboltBridge() {
         XCTAssertEqual(classify("bridge0", "Bridge", "Thunderbolt Bridge"), .thunderbolt)
-        XCTAssertEqual(classify("bridge1", "Bridge", ""), .thunderbolt)
+        // Other bridges (VMs, Internet Sharing) are not a wired network.
+        XCTAssertEqual(classify("bridge100", "Bridge", "Bridge"), .other("Bridge"))
     }
 
     func testClassifySkipsWiFiAndTunnels() {
@@ -387,5 +388,63 @@ final class NetworkMonitorTests: XCTestCase {
         wait(for: [drained], timeout: 1)
 
         XCTAssertEqual(scheduled, 1)
+    }
+
+    // MARK: - Active interface scan
+
+    private typealias Address = NetworkMonitor.InterfaceAddress
+    private let upRunning = IFF_UP | IFF_RUNNING
+
+    func testIdleWiFiIsNotBlockedByPermission() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: true, ssid: nil, wifiActive: false))
+        XCTAssertTrue(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: true, ssid: nil, wifiActive: true))
+    }
+
+    func testLinkLocalOnlyInterfaceIsNotActive() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [
+            Address(name: "en5", flags: upRunning, family: AF_INET6, isLinkLocal: true),
+            Address(name: "en6", flags: upRunning, family: AF_INET6, isLinkLocal: true),
+            Address(name: "en6", flags: upRunning, family: AF_INET),
+        ])
+        XCTAssertEqual(names, ["en6"])
+    }
+
+    func testInterfaceWithIPv4AddressIsActive() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [Address(name: "en1", flags: upRunning, family: AF_INET)])
+        XCTAssertEqual(names, ["en1"])
+    }
+
+    func testIPv6OnlyInterfaceIsActive() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [Address(name: "en2", flags: upRunning, family: AF_INET6)])
+        XCTAssertEqual(names, ["en2"])
+    }
+
+    func testInterfaceMustBeUpAndRunning() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [
+            Address(name: "en3", flags: IFF_UP, family: AF_INET),
+            Address(name: "en4", flags: IFF_RUNNING, family: AF_INET),
+            Address(name: "en5", flags: 0, family: AF_INET6),
+        ])
+        XCTAssertTrue(names.isEmpty)
+    }
+
+    func testLinkLayerOnlyInterfaceIsInactive() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [Address(name: "en6", flags: upRunning, family: AF_LINK)])
+        XCTAssertTrue(names.isEmpty)
+    }
+
+    func testMultipleAddressesPerInterfaceAreCollapsed() {
+        let names = NetworkMonitor.activeInterfaceNames(from: [
+            Address(name: "en7", flags: upRunning, family: AF_LINK),
+            Address(name: "en7", flags: upRunning, family: AF_INET6),
+            Address(name: "en7", flags: upRunning, family: AF_INET),
+            Address(name: "en8", flags: upRunning, family: AF_INET),
+        ])
+        XCTAssertEqual(names, ["en7", "en8"])
+    }
+
+    func testExtraFlagsDoNotPreventActivation() {
+        let flags = upRunning | IFF_BROADCAST | IFF_MULTICAST
+        XCTAssertEqual(NetworkMonitor.activeInterfaceNames(from: [Address(name: "en9", flags: flags, family: AF_INET)]), ["en9"])
     }
 }

@@ -59,6 +59,8 @@ struct IPValidator {
     /// such as "::ffff:1.2.3.4" are treated as IPv6, matching how lookup services report them.
     static func parse(_ ip: String) -> ParsedIP? {
         let trimmed = ip.trimmingCharacters(in: .whitespaces)
+        // inet_pton reads a C string, so it would stop at a NUL and accept an address followed by junk.
+        guard !trimmed.contains("\0") else { return nil }
         if trimmed.contains(":") {
             // Darwin's inet_pton accepts "%zone" suffixes, which are meaningless for external IPs.
             guard !trimmed.contains("%") else { return nil }
@@ -77,7 +79,7 @@ struct IPValidator {
 
         var result: UInt32 = 0
         for octet in octets {
-            guard let value = UInt8(octet) else { return nil }
+            guard isDigits(octet), let value = UInt8(octet) else { return nil }
             result = (result << 8) | UInt32(value)
         }
         return result
@@ -99,9 +101,15 @@ struct IPValidator {
         }
     }
 
+    /// Int()/UInt8() also accept a leading "+" or "-", which is never valid in an address or prefix.
+    private static func isDigits(_ text: Substring) -> Bool {
+        !text.isEmpty && text.allSatisfy { $0.isASCII && $0.isNumber }
+    }
+
     private static func parseCIDR(_ cidr: String) -> (ParsedIP, Int)? {
         let parts = cidr.trimmingCharacters(in: .whitespaces).split(separator: "/", omittingEmptySubsequences: false)
         guard parts.count == 2,
+              isDigits(parts[1]),
               let prefixLength = Int(parts[1]),
               let network = parse(String(parts[0])),
               (0...network.bitCount).contains(prefixLength) else {

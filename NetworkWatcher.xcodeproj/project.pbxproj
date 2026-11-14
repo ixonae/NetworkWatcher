@@ -52,6 +52,9 @@
 		C10000013 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012 /* LaunchAtLogin.swift */; };
 		C10000014 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000012 /* LaunchAtLogin.swift */; };
 		C10000016 /* LaunchAtLoginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000015 /* LaunchAtLoginTests.swift */; };
+		C10000018 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000017 /* Log.swift */; };
+		C10000019 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000017 /* Log.swift */; };
+		C1000001B /* LogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1000001A /* LogTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +110,8 @@
 		C10000010 /* AlertContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertContentTests.swift; sourceTree = "<group>"; };
 		C10000012 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
 		C10000015 /* LaunchAtLoginTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginTests.swift; sourceTree = "<group>"; };
+		C10000017 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
+		C1000001A /* LogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -193,6 +198,7 @@
 		A10000044 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C10000017 /* Log.swift */,
 				C10000012 /* LaunchAtLogin.swift */,
 				C1000000E /* AlertPresenters.swift */,
 				C1000000B /* AlertContent.swift */,
@@ -223,6 +229,7 @@
 		B10000040 /* NetworkWatcherTests */ = {
 			isa = PBXGroup;
 			children = (
+				C1000001A /* LogTests.swift */,
 				C10000015 /* LaunchAtLoginTests.swift */,
 				C10000010 /* AlertContentTests.swift */,
 				C10000009 /* CheckCoordinatorTests.swift */,
@@ -329,6 +336,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000018 /* Log.swift in Sources */,
 				C10000013 /* LaunchAtLogin.swift in Sources */,
 				C1000000F /* AlertPresenters.swift in Sources */,
 				C1000000C /* AlertContent.swift in Sources */,
@@ -356,6 +364,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1000001B /* LogTests.swift in Sources */,
+				C10000019 /* Log.swift in Sources */,
 				C10000016 /* LaunchAtLoginTests.swift in Sources */,
 				C10000014 /* LaunchAtLogin.swift in Sources */,
 				C10000011 /* AlertContentTests.swift in Sources */,

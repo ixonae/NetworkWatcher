@@ -303,10 +303,23 @@ final class IPValidatorTests: XCTestCase {
         XCTAssertFalse(IPValidator.isValidIPAddress(TestIP.overflow))
     }
 
+    func testParseRejectsEmbeddedNUL() {
+        XCTAssertNil(IPValidator.parse("2001:db8::1\0junk"))
+        XCTAssertNil(IPValidator.parse("1.2.3.4\0junk"))
+        XCTAssertFalse(IPValidator.isValidIPAddress("::1\0<html>"))
+    }
+
     func testParseDistinguishesFamilies() {
         XCTAssertEqual(IPValidator.parse(TestIP.stub)?.bytes, [1, 2, 3, 4])
         XCTAssertEqual(IPValidator.parse(TestIP.stub)?.isIPv6, false)
         XCTAssertEqual(IPValidator.parse(TestIP.v6Loopback)?.bytes, Array(repeating: 0, count: 15) + [1])
         XCTAssertEqual(IPValidator.parse(TestIP.v6Mapped)?.isIPv6, true)
+    }
+
+    func testSignedNumbersAreRejected() {
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("10.0.0.0/-0"))
+        XCTAssertFalse(IPValidator.isValidIPOrCIDR("10.0.0.0/+8"))
+        XCTAssertFalse(IPValidator.isValidIPAddress("+1.2.3.4"))
+        XCTAssertFalse(IPValidator.matchesCIDR(ip: "192.168.1.1", cidr: "10.0.0.0/-0"))
     }
 }

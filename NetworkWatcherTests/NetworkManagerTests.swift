@@ -18,6 +18,18 @@ final class NetworkManagerTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Lookup preset migration
+
+    func testLegacyURLChosenAfterMigrationSurvivesRelaunch() {
+        // The first launch (setUp) already ran the one-time migration.
+        var settings = manager.settings
+        settings.ipLookupURL = "https://ifconfig.me/ip"
+        manager.updateSettings(settings)
+
+        let reloaded = NetworkManager(defaults: testDefaults)
+        XCTAssertEqual(reloaded.settings.ipLookupURL, "https://ifconfig.me/ip")
+    }
+
     // MARK: - Network CRUD
 
     func testAddNetwork() {
@@ -53,7 +65,7 @@ final class NetworkManagerTests: XCTestCase {
         let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(network)
 
-        let result = manager.networkForSSID("MyWiFi")
+        let result = NetworkManager.network(forActiveIdentifiers: ["MyWiFi"], in: manager.networks)
         XCTAssertEqual(result?.networkIdentifier, "MyWiFi")
     }
 
@@ -61,7 +73,7 @@ final class NetworkManagerTests: XCTestCase {
         let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(network)
 
-        let result = manager.networkForSSID("mywifi")
+        let result = NetworkManager.network(forActiveIdentifiers: ["mywifi"], in: manager.networks)
         XCTAssertEqual(result?.networkIdentifier, "MyWiFi")
     }
 
@@ -69,7 +81,7 @@ final class NetworkManagerTests: XCTestCase {
         let network = NetworkEntry(networkIdentifier: "MyWiFi", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(network)
 
-        let result = manager.networkForSSID("OtherWiFi")
+        let result = NetworkManager.network(forActiveIdentifiers: ["OtherWiFi"], in: manager.networks)
         XCTAssertNil(result)
     }
 
@@ -79,10 +91,10 @@ final class NetworkManagerTests: XCTestCase {
         manager.addNetwork(specific)
         manager.addNetwork(catchAll)
 
-        let result1 = manager.networkForSSID("MyWiFi")
+        let result1 = NetworkManager.network(forActiveIdentifiers: ["MyWiFi"], in: manager.networks)
         XCTAssertEqual(result1?.networkIdentifier, "MyWiFi")
 
-        let result2 = manager.networkForSSID("UnknownWiFi")
+        let result2 = NetworkManager.network(forActiveIdentifiers: ["UnknownWiFi"], in: manager.networks)
         XCTAssertEqual(result2?.networkIdentifier, "*")
     }
 
@@ -158,7 +170,7 @@ final class NetworkManagerTests: XCTestCase {
         let catchAll = NetworkEntry(networkIdentifier: "*", allowedIPRanges: [AllowedIPEntry(range: TestIP.stub)])
         manager.addNetwork(catchAll)
 
-        let result = manager.networkForSSID("AnyNetwork")
+        let result = NetworkManager.network(forActiveIdentifiers: ["AnyNetwork"], in: manager.networks)
         XCTAssertEqual(result?.networkIdentifier, "*")
     }
 
@@ -168,7 +180,7 @@ final class NetworkManagerTests: XCTestCase {
         manager.addNetwork(catchAll)
         manager.addNetwork(specific)
 
-        let result = manager.networkForSSID("HomeWiFi")
+        let result = NetworkManager.network(forActiveIdentifiers: ["HomeWiFi"], in: manager.networks)
         XCTAssertEqual(result?.networkIdentifier, "HomeWiFi")
     }
 

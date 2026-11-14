@@ -7,6 +7,7 @@ class NetworkManager: ObservableObject {
 
     private let networksKey = "savedNetworks"
     private let settingsKey = "appSettings"
+    private let presetMigrationKey = "lookupPresetMigrationDone"
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -32,17 +33,6 @@ class NetworkManager: ObservableObject {
     func deleteNetwork(_ network: NetworkEntry) {
         networks.removeAll { $0.id == network.id }
         saveNetworks()
-    }
-
-    func networkForSSID(_ ssid: String) -> NetworkEntry? {
-        Self.network(forIdentifier: ssid, in: networks)
-    }
-
-    static func network(forIdentifier identifier: String, in networks: [NetworkEntry]) -> NetworkEntry? {
-        // Try exact match first, then fall back to catch-all "*"
-        return networks.first(where: {
-            $0.networkIdentifier.lowercased() == identifier.lowercased()
-        }) ?? networks.first(where: { $0.networkIdentifier == "*" })
     }
 
     /// The configured network for the active connections: an exact match on any active identifier
@@ -91,6 +81,23 @@ class NetworkManager: ObservableObject {
            let decoded = try? JSONDecoder().decode(AppSettings.self, from: data) {
             settings = decoded
         }
+        migrateLegacyLookupPreset()
     }
 
+    /// Moves a former dual-stack preset to its IPv4-only replacement, once. Skipped when an auth
+    /// token is saved: the token was meant for the old host and must not be sent to a new one.
+    private func migrateLegacyLookupPreset() {
+        guard !defaults.bool(forKey: presetMigrationKey) else { return }
+        guard let replacement = AppSettings.migratedLookupURL(for: settings.ipLookupURL) else {
+            defaults.set(true, forKey: presetMigrationKey)
+            return
+        }
+        // An unreadable Keychain is not "no token": retry on the next launch instead of risking
+        // sending a token saved for the old host to the new one.
+        guard let hasToken = KeychainService.contains(key: "ipLookupAuthToken") else { return }
+        defaults.set(true, forKey: presetMigrationKey)
+        guard !hasToken else { return }
+        settings.ipLookupURL = replacement
+        saveSettings()
+    }
 }

@@ -51,6 +51,12 @@ struct AppSettings: Codable {
 
     init() {}
 
+    /// The IPv4-only replacement for a former dual-stack preset, or nil when `url` isn't one.
+    /// Applied once by `NetworkManager`, never while decoding, so a URL chosen later is left alone.
+    static func migratedLookupURL(for url: String) -> String? {
+        legacyPresetURLs[url]
+    }
+
     static func isValidInterval(_ seconds: Int) -> Bool {
         checkIntervalRange.contains(seconds)
     }
@@ -66,7 +72,7 @@ struct AppSettings: Codable {
         allowUnconfiguredNetworks = try container.decodeIfPresent(Bool.self, forKey: .allowUnconfiguredNetworks) ?? false
         muteAlerts = try container.decodeIfPresent(Bool.self, forKey: .muteAlerts) ?? false
         let storedURL = try container.decodeIfPresent(String.self, forKey: .ipLookupURL) ?? "https://api.ipify.org?format=text"
-        ipLookupURL = Self.legacyPresetURLs[storedURL] ?? storedURL
+        ipLookupURL = storedURL
         // Decoded leniently so an unknown value from a newer version falls back to the default.
         let storedStyle = try container.decodeIfPresent(String.self, forKey: .alertStyle)
         alertStyle = storedStyle.flatMap(AlertStyle.init(rawValue:)) ?? .notification

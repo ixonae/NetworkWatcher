@@ -5,7 +5,6 @@ enum IPStatus: Equatable {
     case matchVPN
     case mismatch
     case unknown
-    case noNetwork
 }
 
 /// Tracks whether the user has already been alerted about the current mismatch.
@@ -13,8 +12,14 @@ struct AlertState: Equatable {
     var mismatchAcknowledged = false
     /// Network the current mismatch alert was shown for, so moving to another bad network alerts again.
     var acknowledgedNetwork: String?
+    /// Whether a mismatch alert was actually presented (not muted), so a restore is only announced
+    /// for a mismatch the user was told about.
+    var mismatchPresented = false
     /// Whether the user was told that location permission is needed to read the Wi-Fi name.
     var locationAlertShown = false
+    /// Whether the acknowledged alert was the "unconfigured" kind, so a change between
+    /// unconfigured and mismatch on the same network is announced.
+    var acknowledgedUnconfigured = false
 }
 
 enum StatusAlert: Equatable {
@@ -90,24 +95,29 @@ struct StatusEvaluator {
         return mismatched(.mismatch(ip: ip, networkName: networkName), networkName: networkName, alertState: alertState)
     }
 
-    /// Whether the missing SSID could change the outcome: nothing matched exactly, and either
-    /// nothing matched at all or some rule is keyed on a Wi-Fi name.
+    /// Whether the missing SSID could change the outcome. A Wi-Fi rule takes priority over wired and
+    /// catch-all ones, so unless the match is itself a Wi-Fi rule, any configured Wi-Fi rule might apply.
     private func needsSSID(_ matchedNetwork: NetworkEntry?) -> Bool {
         guard let matchedNetwork else { return true }
-        return matchedNetwork.isCatchAll && networks.contains(where: \.isWiFiNetwork)
+        return !matchedNetwork.isWiFiNetwork && networks.contains(where: \.isWiFiNetwork)
     }
 
     private func matched(_ status: IPStatus, ip: String, networkName: String, alertState: AlertState) -> StatusEvaluation {
         var newState = alertState
         newState.mismatchAcknowledged = false
-        let alert: StatusAlert? = alertState.mismatchAcknowledged && !muteAlerts
+        newState.mismatchPresented = false
+        let alert: StatusAlert? = alertState.mismatchPresented && !muteAlerts
             ? .restored(ip: ip, networkName: networkName)
             : nil
         return StatusEvaluation(status: status, alert: alert, alertState: newState)
     }
 
     private func mismatched(_ alert: StatusAlert, networkName: String, alertState: AlertState) -> StatusEvaluation {
-        let alreadyAlerted = alertState.mismatchAcknowledged && alertState.acknowledgedNetwork == networkName
+        let isUnconfigured: Bool
+        if case .unconfigured = alert { isUnconfigured = true } else { isUnconfigured = false }
+        let alreadyAlerted = alertState.mismatchAcknowledged
+            && alertState.acknowledgedNetwork == networkName
+            && alertState.acknowledgedUnconfigured == isUnconfigured
         guard !alreadyAlerted else {
             return StatusEvaluation(status: .mismatch, alert: nil, alertState: alertState)
         }
@@ -115,6 +125,8 @@ struct StatusEvaluator {
         var newState = alertState
         newState.mismatchAcknowledged = true
         newState.acknowledgedNetwork = networkName
+        newState.acknowledgedUnconfigured = isUnconfigured
+        newState.mismatchPresented = !muteAlerts
         return StatusEvaluation(status: .mismatch, alert: muteAlerts ? nil : alert, alertState: newState)
     }
 }
