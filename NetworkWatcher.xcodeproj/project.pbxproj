@@ -9,16 +9,15 @@
 /* Begin PBXBuildFile section */
 		A10000001 /* NetworkWatcherApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000011 /* NetworkWatcherApp.swift */; };
 		A10000002 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012 /* AppDelegate.swift */; };
-		A10000003 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000013 /* Profile.swift */; };
+		A10000003 /* NetworkEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000013 /* NetworkEntry.swift */; };
 		A10000004 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000014 /* AppSettings.swift */; };
 		A10000005 /* IPChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000015 /* IPChecker.swift */; };
 		A10000006 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000016 /* NetworkMonitor.swift */; };
 		A10000007 /* IPValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000017 /* IPValidator.swift */; };
-		A10000008 /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* ProfileManager.swift */; };
-		A10000009 /* NetworkDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000019 /* NetworkDisabler.swift */; };
+		A10000008 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* NetworkManager.swift */; };
 		A1000000A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001A /* SettingsView.swift */; };
-		A1000000B /* ProfileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001B /* ProfileListView.swift */; };
-		A1000000C /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001C /* ProfileEditView.swift */; };
+		A1000000B /* NetworkListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001B /* NetworkListView.swift */; };
+		A1000000C /* NetworkDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001C /* NetworkDetailView.swift */; };
 		A1000000D /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001D /* GeneralSettingsView.swift */; };
 		A1000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000001E /* Assets.xcassets */; };
 		A1000000F /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000021 /* KeychainService.swift */; };
@@ -32,14 +31,17 @@
 		B10000006 /* IPValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000017 /* IPValidator.swift */; };
 		B10000007 /* IPChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000015 /* IPChecker.swift */; };
 		B10000008 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000021 /* KeychainService.swift */; };
-		B10000009 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000013 /* Profile.swift */; };
+		B10000009 /* NetworkEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000013 /* NetworkEntry.swift */; };
 		B1000000A /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000014 /* AppSettings.swift */; };
-		B1000000B /* ProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* ProfileManager.swift */; };
+		B1000000B /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000018 /* NetworkManager.swift */; };
 		B10000016 /* TestConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000017 /* TestConstants.swift */; };
 		B1000001B /* NetworkMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000001C /* NetworkMonitorTests.swift */; };
 		B1000001D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000016 /* NetworkMonitor.swift */; };
 		B10000018 /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000019 /* UpdateCheckerTests.swift */; };
 		B1000001A /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000025 /* UpdateChecker.swift */; };
+		C10000002 /* StatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000001 /* StatusEvaluator.swift */; };
+		C10000003 /* StatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000001 /* StatusEvaluator.swift */; };
+		C10000005 /* StatusEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000004 /* StatusEvaluatorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,16 +63,15 @@
 		A10000010 /* Network Watcher.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Network Watcher.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000011 /* NetworkWatcherApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkWatcherApp.swift; sourceTree = "<group>"; };
 		A10000012 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A10000013 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		A10000013 /* NetworkEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkEntry.swift; sourceTree = "<group>"; };
 		A10000014 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A10000015 /* IPChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPChecker.swift; sourceTree = "<group>"; };
 		A10000016 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		A10000017 /* IPValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPValidator.swift; sourceTree = "<group>"; };
-		A10000018 /* ProfileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileManager.swift; sourceTree = "<group>"; };
-		A10000019 /* NetworkDisabler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkDisabler.swift; sourceTree = "<group>"; };
+		A10000018 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		A1000001A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		A1000001B /* ProfileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileListView.swift; sourceTree = "<group>"; };
-		A1000001C /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
+		A1000001B /* NetworkListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkListView.swift; sourceTree = "<group>"; };
+		A1000001C /* NetworkDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkDetailView.swift; sourceTree = "<group>"; };
 		A1000001D /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		A1000001E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000001F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -87,6 +88,8 @@
 		B10000017 /* TestConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestConstants.swift; sourceTree = "<group>"; };
 		B1000001C /* NetworkMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitorTests.swift; sourceTree = "<group>"; };
 		B10000019 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
+		C10000001 /* StatusEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEvaluator.swift; sourceTree = "<group>"; };
+		C10000004 /* StatusEvaluatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusEvaluatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -164,7 +167,7 @@
 		A10000043 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				A10000013 /* Profile.swift */,
+				A10000013 /* NetworkEntry.swift */,
 				A10000014 /* AppSettings.swift */,
 			);
 			path = Models;
@@ -173,11 +176,11 @@
 		A10000044 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C10000001 /* StatusEvaluator.swift */,
 				A10000015 /* IPChecker.swift */,
 				A10000016 /* NetworkMonitor.swift */,
 				A10000017 /* IPValidator.swift */,
-				A10000018 /* ProfileManager.swift */,
-				A10000019 /* NetworkDisabler.swift */,
+				A10000018 /* NetworkManager.swift */,
 				A10000021 /* KeychainService.swift */,
 				A10000025 /* UpdateChecker.swift */,
 			);
@@ -188,8 +191,8 @@
 			isa = PBXGroup;
 			children = (
 				A1000001A /* SettingsView.swift */,
-				A1000001B /* ProfileListView.swift */,
-				A1000001C /* ProfileEditView.swift */,
+				A1000001B /* NetworkListView.swift */,
+				A1000001C /* NetworkDetailView.swift */,
 				A1000001D /* GeneralSettingsView.swift */,
 				A10000023 /* AboutView.swift */,
 			);
@@ -199,6 +202,7 @@
 		B10000040 /* NetworkWatcherTests */ = {
 			isa = PBXGroup;
 			children = (
+				C10000004 /* StatusEvaluatorTests.swift */,
 				B10000017 /* TestConstants.swift */,
 				B10000011 /* IPValidatorTests.swift */,
 				B10000012 /* NetworkManagerTests.swift */,
@@ -301,18 +305,18 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000002 /* StatusEvaluator.swift in Sources */,
 				A10000001 /* NetworkWatcherApp.swift in Sources */,
 				A10000002 /* AppDelegate.swift in Sources */,
-				A10000003 /* Profile.swift in Sources */,
+				A10000003 /* NetworkEntry.swift in Sources */,
 				A10000004 /* AppSettings.swift in Sources */,
 				A10000005 /* IPChecker.swift in Sources */,
 				A10000006 /* NetworkMonitor.swift in Sources */,
 				A10000007 /* IPValidator.swift in Sources */,
-				A10000008 /* ProfileManager.swift in Sources */,
-				A10000009 /* NetworkDisabler.swift in Sources */,
+				A10000008 /* NetworkManager.swift in Sources */,
 				A1000000A /* SettingsView.swift in Sources */,
-				A1000000B /* ProfileListView.swift in Sources */,
-				A1000000C /* ProfileEditView.swift in Sources */,
+				A1000000B /* NetworkListView.swift in Sources */,
+				A1000000C /* NetworkDetailView.swift in Sources */,
 				A1000000D /* GeneralSettingsView.swift in Sources */,
 				A1000000F /* KeychainService.swift in Sources */,
 				A10000022 /* AboutView.swift in Sources */,
@@ -324,12 +328,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000005 /* StatusEvaluatorTests.swift in Sources */,
+				C10000003 /* StatusEvaluator.swift in Sources */,
 				B10000006 /* IPValidator.swift in Sources */,
 				B10000007 /* IPChecker.swift in Sources */,
 				B10000008 /* KeychainService.swift in Sources */,
-				B10000009 /* Profile.swift in Sources */,
+				B10000009 /* NetworkEntry.swift in Sources */,
 				B1000000A /* AppSettings.swift in Sources */,
-				B1000000B /* ProfileManager.swift in Sources */,
+				B1000000B /* NetworkManager.swift in Sources */,
 				B10000001 /* IPValidatorTests.swift in Sources */,
 				B10000002 /* NetworkManagerTests.swift in Sources */,
 				B10000003 /* ModelTests.swift in Sources */,
