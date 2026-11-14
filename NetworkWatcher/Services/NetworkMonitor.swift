@@ -284,18 +284,23 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
         let addresses = sequence(first: firstAddr, next: { $0.pointee.ifa_next }).compactMap { ptr -> InterfaceAddress? in
             guard let address = ptr.pointee.ifa_addr else { return nil }
             let family = Int32(address.pointee.sa_family)
-            let isLinkLocal = family == AF_INET6 && address.withMemoryRebound(to: sockaddr_in6.self, capacity: 1) {
-                let bytes = withUnsafeBytes(of: $0.pointee.sin6_addr) { Array($0) }
-                return bytes[0] == 0xfe && bytes[1] & 0xc0 == 0x80
-            }
             return InterfaceAddress(
                 name: String(cString: ptr.pointee.ifa_name),
                 flags: Int32(bitPattern: ptr.pointee.ifa_flags),
                 family: family,
-                isLinkLocal: isLinkLocal
+                isLinkLocal: isIPv6LinkLocal(address)
             )
         }
         return activeInterfaceNames(from: addresses)
+    }
+
+    private static func isIPv6LinkLocal(_ address: UnsafePointer<sockaddr>) -> Bool {
+        guard Int32(address.pointee.sa_family) == AF_INET6 else { return false }
+        return address.withMemoryRebound(to: sockaddr_in6.self, capacity: 1) { ipv6Address in
+            withUnsafeBytes(of: ipv6Address.pointee.sin6_addr) { bytes in
+                bytes[0] == 0xfe && bytes[1] & 0xc0 == 0x80
+            }
+        }
     }
 
     // MARK: - CLLocationManagerDelegate

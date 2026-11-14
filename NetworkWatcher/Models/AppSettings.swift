@@ -21,26 +21,29 @@ enum AlertStyle: String, Codable, CaseIterable {
 struct AppSettings: Codable {
     /// Allowed check intervals, in seconds.
     static let checkIntervalRange = 5...3600
+    private static let defaultLookupURL = "https://api.ipify.org?format=text"
+    private static let icanhazipIPv4URL = "https://ipv4.icanhazip.com"
+    private static let identMeIPv4URL = "https://4.ident.me"
 
     var checkIntervalSeconds: Int = 60
     var showIPInMenuBar: Bool = false
     var allowUnconfiguredNetworks: Bool = false
     var muteAlerts: Bool = false
-    var ipLookupURL: String = "https://api.ipify.org?format=text"
+    var ipLookupURL: String = Self.defaultLookupURL
     var alertStyle: AlertStyle = .notification
 
     /// IPv4-only endpoints: dual-stack services return an IPv6 address when one is available,
     /// which would not match the IPv4 rules most networks are configured with.
     static let predefinedURLs: [(name: String, url: String)] = [
-        ("ipify (IPv4)", "https://api.ipify.org?format=text"),
-        ("icanhazip (IPv4)", "https://ipv4.icanhazip.com"),
-        ("ident.me (IPv4)", "https://4.ident.me"),
+        ("ipify (IPv4)", defaultLookupURL),
+        ("icanhazip (IPv4)", icanhazipIPv4URL),
+        ("ident.me (IPv4)", identMeIPv4URL),
     ]
 
     /// Former dual-stack presets, mapped to their IPv4-only replacements.
     static let legacyPresetURLs: [String: String] = [
-        "https://icanhazip.com": "https://ipv4.icanhazip.com",
-        "https://ifconfig.me/ip": "https://4.ident.me",
+        "https://icanhazip.com": icanhazipIPv4URL,
+        "https://ifconfig.me/ip": identMeIPv4URL,
     ]
 
     enum CodingKeys: String, CodingKey {
@@ -71,8 +74,7 @@ struct AppSettings: Codable {
         showIPInMenuBar = try container.decodeIfPresent(Bool.self, forKey: .showIPInMenuBar) ?? false
         allowUnconfiguredNetworks = try container.decodeIfPresent(Bool.self, forKey: .allowUnconfiguredNetworks) ?? false
         muteAlerts = try container.decodeIfPresent(Bool.self, forKey: .muteAlerts) ?? false
-        let storedURL = try container.decodeIfPresent(String.self, forKey: .ipLookupURL) ?? "https://api.ipify.org?format=text"
-        ipLookupURL = storedURL
+        ipLookupURL = try container.decodeIfPresent(String.self, forKey: .ipLookupURL) ?? Self.defaultLookupURL
         // Decoded leniently so an unknown value from a newer version falls back to the default.
         let storedStyle = try container.decodeIfPresent(String.self, forKey: .alertStyle)
         alertStyle = storedStyle.flatMap(AlertStyle.init(rawValue:)) ?? .notification
