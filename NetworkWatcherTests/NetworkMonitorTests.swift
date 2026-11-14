@@ -1,4 +1,5 @@
 import XCTest
+import CoreLocation
 import Cocoa
 
 /// Captures debounced work items so tests control when they run instead of waiting on the clock.
@@ -347,5 +348,44 @@ final class NetworkMonitorTests: XCTestCase {
         let usb = NetworkEntry(networkIdentifier: "USB")
         let identifiers = NetworkMonitor.networkIdentifiers(ssid: nil, interfaceTypes: [.usb])
         XCTAssertEqual(NetworkManager.network(forActiveIdentifiers: identifiers, in: [ethernet, usb])?.networkIdentifier, "USB")
+    }
+
+    // MARK: - Location permission
+
+    func testSSIDBlockedWhenWiFiOnWithoutPermission() {
+        for status in [CLAuthorizationStatus.notDetermined, .denied, .restricted] {
+            XCTAssertTrue(NetworkMonitor.ssidBlockedByPermission(authorization: status, wifiPoweredOn: true, ssid: nil), "\(status.rawValue)")
+        }
+    }
+
+    func testSSIDNotBlockedWhenAuthorized() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .authorizedAlways, wifiPoweredOn: true, ssid: nil))
+    }
+
+    func testSSIDNotBlockedWhenWiFiOff() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: false, ssid: nil))
+    }
+
+    func testSSIDNotBlockedWhenSSIDIsReadable() {
+        XCTAssertFalse(NetworkMonitor.ssidBlockedByPermission(authorization: .denied, wifiPoweredOn: true, ssid: "Home"))
+    }
+
+    func testLocationSettingsURLTargetsLocationServices() {
+        XCTAssertEqual(NetworkMonitor.locationSettingsURL.scheme, "x-apple.systempreferences")
+        XCTAssertTrue(NetworkMonitor.locationSettingsURL.absoluteString.hasSuffix("Privacy_LocationServices"))
+    }
+
+    func testAuthorizationChangeSchedulesRecheck() {
+        var scheduled = 0
+        let monitor = NetworkMonitor(debounceInterval: 0) { _, _ in scheduled += 1 }
+        monitor.startMonitoring()
+        defer { monitor.stopMonitoring() }
+
+        monitor.locationManagerDidChangeAuthorization(CLLocationManager())
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
+
+        XCTAssertEqual(scheduled, 1)
     }
 }

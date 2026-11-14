@@ -148,6 +148,24 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
         return wifiClient.interface()?.ssid()
     }
 
+    /// True when Wi-Fi is on but macOS withholds the SSID because location access isn't granted.
+    var isSSIDBlockedByPermission: Bool {
+        let wifi = wifiClient.interface()
+        return Self.ssidBlockedByPermission(
+            authorization: locationManager.authorizationStatus,
+            wifiPoweredOn: wifi?.powerOn() ?? false,
+            ssid: wifi?.ssid()
+        )
+    }
+
+    static func ssidBlockedByPermission(authorization: CLAuthorizationStatus, wifiPoweredOn: Bool, ssid: String?) -> Bool {
+        // macOS reports granted location access as .authorizedAlways (there is no "when in use").
+        return wifiPoweredOn && ssid == nil && authorization != .authorizedAlways
+    }
+
+    /// System Settings pane where the user grants location access.
+    static let locationSettingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
+
     /// Returns all active network identifiers: WiFi SSID if connected, plus interface types like "Ethernet".
     func activeNetworkIdentifiers() -> [String] {
         Self.networkIdentifiers(ssid: currentSSID(), interfaceTypes: activeInterfaces().map(\.type))
@@ -247,7 +265,8 @@ class NetworkMonitor: NSObject, CLLocationManagerDelegate, CWEventDelegate {
     // MARK: - CLLocationManagerDelegate
 
     func locationManagerDidChangeAuthorization(_: CLLocationManager) {
-        // Permission changed; the next SSID check will now work if authorized
+        // The SSID may have become readable (or hidden), so re-evaluate the network.
+        DispatchQueue.main.async { [weak self] in self?.scheduleChangeNotification() }
     }
 }
 
